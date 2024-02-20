@@ -53,6 +53,16 @@ We will do this in four steps
 3. package the prover and verifier binaries to be used in a unikernel, and run them.  Additionally, we fix any problems that emerge (spoiler alert: one or two do!)
 4. build and run the unikernel, fixing any problems that emerge (spoiler alert: one or two do!)
 
+#### Download the proof parameters file
+
+In order to do any kind of proving, you will first need a 512MiB proof parameters file. The way the examples are set up here, we expect to find it in the `./zkevm-chain/gevulot` folder
+
+While at the root of the `zkevm-chain` package, run this:
+
+```
+wget -P ./gevulot https://storage.googleapis.com/zkevm-circuits-keys/kzg_bn254_22.srs
+```
+
 ### 3.1 Witness capture
 
 We have rewritten the prover_cmd binary, the main function originally here:
@@ -112,6 +122,16 @@ In order to capture a witness, pass in:
 
 
 ### 3.3 `prover_cmd` with nanos.
+
+## 4. Constraints
+
+There are a few things to bear in mind when building or adapting a prover for use with Gevulot
+- you may not fork another process
+- may not have write permission to the root
+
+Additionally, the shim require the use of a non-async main() function.  Any async calls must be adapted or rewritten. This will be covered in the section on creating unikernel images.
+
+
 
 
 

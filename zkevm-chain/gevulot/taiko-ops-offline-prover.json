@@ -2,16 +2,20 @@
     "RebootOnExit": true,
     "RunConfig": {
       "CPUs": 1,
-      "Memory": "8g"
+      "Memory": "23g"
     },
     "Env":{
       "GLOG_logtostderr": "1"
     },
     "Dirs":["gevulot"],
     "Args": [
-      "verifier",
+      "offline_prover",
       "-p",
-      "/gevulot/proof.json"],
+      "/ops_deploy/proof.json",
+      "-k",
+      "gevulot/kzg_bn254_22.srs",
+      "-w",
+      "gevulot/witness-57437.json"],
     "Program":"./target/release/prover_cmd"
   }
   

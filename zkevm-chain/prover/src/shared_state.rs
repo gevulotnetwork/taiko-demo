@@ -21,6 +21,8 @@ mod evm_verifier_helper {
     pub use circuit_benchmarks::taiko_super_circuit::{
         evm_verify, gen_verifier, gevulot_evm_verify,
     };
+    // cannot fork
+    // pub use snark_verifier::loader::evm;
     pub use zkevm_circuits::root_circuit::taiko_aggregation::AccumulationSchemeType;
     pub use zkevm_circuits::root_circuit::Config;
 }
@@ -351,6 +353,9 @@ fn compute_proof<C: Circuit<Fr> + Clone + SubCircuit<Fr> + CircuitExt<Fr>>(
                         evm_verifier_helper::AccumulationSchemeType::GwcType,
                     );
                     println!("deployment_code len {:?}", deployment_code.len());
+                    // cannot fork
+                    // let evm_verifier_bytecode =
+                    //     evm_verifier_helper::evm::compile_solidity(&deployment_code);
                     let evm_verifier_bytecode = local_compile_solidity(deployment_code);
 
                     println!(

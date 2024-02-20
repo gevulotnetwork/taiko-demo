@@ -11,7 +11,7 @@
     "Args": [
       "verifier",
       "-p",
-      "/gevulot/proof.json"],
+      "/gevulot/proof-bad.json"],
     "Program":"./target/release/prover_cmd"
   }
   

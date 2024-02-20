@@ -9,9 +9,13 @@
     },
     "Dirs":["gevulot"],
     "Args": [
-      "verifier",
-      "-p",
-      "/gevulot/proof.json"],
+    "witness_capture",
+    "-b",
+    "57437",
+    "-r",
+    "http://35.195.113.51:8547",
+    "-w",
+    "/gevulot/witness-57437.json"],
     "Program":"./target/release/prover_cmd"
   }
   
