@@ -1,0 +1,37 @@
+[workspace]
+members = [
+    "zkevm-circuits",
+    "bus-mapping",
+    "geth-utils",
+    "keccak256",
+    "gadgets",
+    "integration-tests",
+    "eth-types",
+    "external-tracer",
+    "mock",
+    "circuit-benchmarks",
+    "testool",
+]
+
+[patch.crates-io]
+halo2_proofs = { git = "https://github.com/taikoxyz/halo2.git", branch = "taiko/unstable" }
+
+# Definition of benchmarks profile to use.
+[profile.bench]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+rpath = false
+lto = "thin"
+incremental = false
+codegen-units = 1
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = true
+overflow-checks = true
+rpath = false
+lto = "thin"
+incremental = true

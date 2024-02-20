@@ -1,0 +1,16 @@
+{
+    "RebootOnExit": true,
+    "RunConfig": {
+      "CPUs": 1,
+      "Memory": "8g"
+    },
+    "Env":{
+      "GLOG_logtostderr": "1"
+    },
+    "Dirs":["gevulot"],
+    "Args": [
+        "-p",
+        "/gevulot/proof.json"],
+        "Program":"./target/release/taiko_verifier"
+}
+  
