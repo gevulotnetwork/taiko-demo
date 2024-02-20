@@ -17,11 +17,12 @@ use std::process::exit;
 use std::str::FromStr;
 use std::time::SystemTime;
 
-// #[cfg(feature = "evm-verifier")]
 mod evm_verifier_helper {
     pub use circuit_benchmarks::taiko_super_circuit::{
         evm_verify, gen_verifier, gevulot_evm_verify,
     };
+    // cannot fork
+    // pub use snark_verifier::loader::evm;
     pub use zkevm_circuits::root_circuit::taiko_aggregation::AccumulationSchemeType;
     pub use zkevm_circuits::root_circuit::Config;
 }
@@ -249,7 +250,6 @@ fn compute_proof<C: Circuit<Fr> + Clone + SubCircuit<Fr> + CircuitExt<Fr>>(
             );
 
             let snark = gen_snark_gwc(&circuit_param, &pk, circuit, None::<&str>);
-            println!("agg 1");
             circuit_proof.proof = snark.proof.clone().into();
             if std::env::var("PROVERD_DUMP").is_ok() {
                 File::create(format!(
@@ -260,7 +260,6 @@ fn compute_proof<C: Circuit<Fr> + Clone + SubCircuit<Fr> + CircuitExt<Fr>>(
                 .write_all(&snark.proof)
                 .unwrap();
             }
-            println!("agg 2");
 
             if aggregation_param.k() as usize > circuit_config.min_k_aggregation {
                 aggregation_param.downsize(circuit_config.min_k_aggregation as u32);
@@ -276,14 +275,11 @@ fn compute_proof<C: Circuit<Fr> + Clone + SubCircuit<Fr> + CircuitExt<Fr>>(
                 v
             };
 
-            println!("agg 3");
-
             let agg_pk = {
                 let cache_key = format!(
                     "{}-agg-{}{:?}",
                     &task_options.circuit, &agg_param_path, &circuit_config
                 );
-                println!("agg 3a");
                 shared_state
                     .gen_pk(
                         &cache_key,
@@ -301,7 +297,6 @@ fn compute_proof<C: Circuit<Fr> + Clone + SubCircuit<Fr> + CircuitExt<Fr>>(
                     .as_millis()
                     - start
             );
-            println!("agg 4");
 
             let agg_instance = agg_circuit.instance();
             for fr in &agg_instance[0] {
@@ -338,7 +333,6 @@ fn compute_proof<C: Circuit<Fr> + Clone + SubCircuit<Fr> + CircuitExt<Fr>>(
                         .as_millis()
                         - start
                 );
-                // #[cfg(feature = "evm-verifier")]
                 {
                     println!(
                         "start gen_verifier {:?} ms",
@@ -359,6 +353,9 @@ fn compute_proof<C: Circuit<Fr> + Clone + SubCircuit<Fr> + CircuitExt<Fr>>(
                         evm_verifier_helper::AccumulationSchemeType::GwcType,
                     );
                     println!("deployment_code len {:?}", deployment_code.len());
+                    // cannot fork
+                    // let evm_verifier_bytecode =
+                    //     evm_verifier_helper::evm::compile_solidity(&deployment_code);
                     let evm_verifier_bytecode = local_compile_solidity(deployment_code);
 
                     println!(
@@ -653,7 +650,6 @@ impl SharedState {
 
                 let witness = match prover_mode {
                     ProverMode::WitnessCapture | ProverMode::LegacyProver => {
-                        println!("call from_request");
                         CircuitWitness::from_request(&mut task_options_copy)
                             .await
                             .map_err(|e| e.to_string())?
@@ -671,7 +667,6 @@ impl SharedState {
                 if prover_mode == ProverMode::WitnessCapture {
                     let jwitness = json!(witness).to_string();
                     write(task_options_copy.witness_path.clone().unwrap(), jwitness).unwrap();
-                    println!("done creating witness");
                     exit(1);
                 }
 
@@ -723,7 +718,7 @@ impl SharedState {
                 if prover_mode != ProverMode::WitnessCapture {
                     let jproof = json!(res).to_string();
                     write(task_options_copy.proof_path.clone().unwrap(), jproof).unwrap();
-                    println!("done creating and writing proof to {:?}", task_options_copy.proof_path.unwrap());
+                    println!("created proof, is now written to {:?}", task_options_copy.proof_path.unwrap());
                     exit(1);
                 }
 
@@ -786,7 +781,6 @@ impl SharedState {
             .as_millis();
 
         let witness_path = task_options_copy.clone().witness_path.unwrap();
-        println!("SharedState::prove witness_path {}", witness_path);
 
         let witness: CircuitWitness = {
             let jwitness = std::fs::read_to_string(witness_path).unwrap();
@@ -825,11 +819,6 @@ impl SharedState {
             gas: witness.gas_used(),
             bytecode: bytes,
         };
-
-        println!(
-            "proof.aggregation.proof.len() {}",
-            res.aggregation.proof.len()
-        );
 
         let time2 = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
@@ -902,12 +891,6 @@ impl SharedState {
         circuit: &C,
         aux: &mut ProofResultInstrumentation,
     ) -> Result<Arc<ProverKey>, Box<dyn std::error::Error>> {
-        // let mut rw = self.rw.lock().unwrap();
-        // let mut rw = &self.rwstate;
-        // if !rw.pk_cache.contains_key(cache_key) {
-        //     // drop, potentially long running
-        //     drop(rw);
-
         let vk = {
             let time_started = Instant::now();
             let vk = keygen_vk(param.as_ref(), circuit)?;

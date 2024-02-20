@@ -18,7 +18,9 @@ use snark_verifier::{
     verifier::SnarkVerifier,
 };
 use snark_verifier_sdk::{GWC, SHPLONK};
-use std::{fs, path::Path, rc::Rc};
+use std::rc::Rc;
+// cannot write file to root
+// use std::{fs, path::Path, rc::Rc};
 use zkevm_circuits::root_circuit::{taiko_aggregation::AccumulationSchemeType, KzgDk, KzgSvk};
 
 /// Number of limbs to decompose a elliptic curve base field element into.
@@ -87,6 +89,7 @@ pub fn gen_verifier(
     };
 
     let sol = loader.solidity_code();
+    // cannot write file to root
     // fs::write(Path::new("./aggregation_plonk.sol"), &sol).unwrap();
     sol
 }

@@ -9,12 +9,13 @@
     },
     "Dirs":["gevulot"],
     "Args": [
-    "-p",
-    "/ops_deploy/proof.json",
-    "-k",
-    "/gevulot/kzg_bn254_22.srs",
+    "witness_capture",
+    "-b",
+    "57437",
+    "-r",
+    "http://35.195.113.51:8547",
     "-w",
     "/gevulot/witness-57437.json"],
-    "Program":"./target/release/taiko_prover"
+    "Program":"./target/release/prover_cmd"
   }
   

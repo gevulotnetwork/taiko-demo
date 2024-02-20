@@ -9,12 +9,9 @@
     },
     "Dirs":["gevulot"],
     "Args": [
-    "-p",
-    "/ops_deploy/proof-mock.json",
-    "-k",
-    "/gevulot/kzg_bn254_22.srs",
-    "-w",
-    "/gevulot/witness-57437.json"],
-    "Program":"./target/release/taiko_mock"
+      "verifier",
+      "-p",
+      "/gevulot/proof-bad.json"],
+    "Program":"./target/release/prover_cmd"
   }
   

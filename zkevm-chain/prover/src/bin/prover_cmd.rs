@@ -1,4 +1,3 @@
-// use env_logger::Env;
 use clap::Parser;
 use prover::shared_state::SharedState;
 use zkevm_common::prover::*;
@@ -136,8 +135,4 @@ async fn main() {
     state.get_or_enqueue(&request).await;
     state.duty_cycle().await;
     let _result = state.get_or_enqueue(&request).await;
-    //     .expect("some")
-    //     .expect("result");
-
-    // serde_json::to_writer(std::io::stdout(), &result).expect("serialize and write");
 }

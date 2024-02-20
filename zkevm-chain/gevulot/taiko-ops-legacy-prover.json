@@ -9,9 +9,13 @@
     },
     "Dirs":["gevulot"],
     "Args": [
-      "verifier",
+      "legacy_prover",
       "-p",
-      "/gevulot/proof.json"],
+      "/ops_deploy/proof.json",
+      "-k",
+      "/gevulot/kzg_bn254_22.srs",
+      "-r",
+      "/gevulot/witness-57437.json"],
     "Program":"./target/release/prover_cmd"
   }
   

@@ -16,23 +16,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
-    let mut new_args = vec!["dummy".to_string()];
+    let mut args = vec!["dummy".to_string()];
     for a in task.args.clone() {
-        new_args.push(a);
+        args.push(a);
     }
 
-    // Display program arguments we received. These could be used for
-    // e.g. parsing CLI arguments with clap.
-    println!("taiko prover: new_args: {:?}", new_args);
+    println!("taiko prover: args: {:?}", args);
 
-    let proof_path = prover_cmd(&new_args);
+    let proof_path = prover_cmd(&args);
 
-    // -----------------------------------------------------------------------
-    // Here would be the control logic to run the prover with given arguments.
-    // -----------------------------------------------------------------------
-
-    // Write generated proof to a file.
-    // std::fs::write("/workspace/proof.dat", b"this is a proof.")?;
     println!("exit prover run_task");
 
     // Return TaskResult with reference to the generated proof file.
