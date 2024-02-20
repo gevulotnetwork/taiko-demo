@@ -1,4 +1,3 @@
-// use env_logger::Env;
 use clap::Parser;
 use gevulot_shim::{Task, TaskResult};
 use prover::shared_state::verify;
@@ -14,31 +13,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
-    let mut new_args = vec!["dummy".to_string()];
+    let mut args = vec!["dummy".to_string()];
     for a in task.args.clone() {
-        new_args.push(a);
+        args.push(a);
     }
+    println!("taiko verifier: args: {:?}", &args);
 
-    // Display program arguments we received. These could be used for
-    // e.g. parsing CLI arguments with clap.
-    println!("taiko verifier: new_args: {:?}", &new_args);
-
-    let result = verifier_cmd(&new_args);
+    let result = verifier_cmd(&args);
     let result: String = match result {
         true => "Taiko verifier result: success".to_string(),
         false => "Taiko verifier result: fail".to_string(),
     };
-    // -----------------------------------------------------------------------
-    // Here would be the control logic to run the prover with given arguments.
-    // -----------------------------------------------------------------------
 
     println!("done with taiko verification, result is {:?}", result);
-
-    // Write generated proof to a file.
-    // std::fs::write("/workspace/verify.dat", result)?;
-    println!("exit verifier run_task");
-
-    // Return TaskResult
+    println!("exit taiko_verifier task");
     task.result(vec![], vec![])
 }
 
@@ -63,7 +51,7 @@ fn verifier_cmd(args: &Vec<String>) -> bool {
         .collect::<Result<Vec<_>, io::Error>>()
         .unwrap();
 
-    println!("file entries at directory . :: {:?}", entries);
+    println!("file entries in root directory :: {:?}", entries);
 
     let entries = fs::read_dir("/workspace")
         .unwrap()
@@ -71,17 +59,9 @@ fn verifier_cmd(args: &Vec<String>) -> bool {
         .collect::<Result<Vec<_>, io::Error>>()
         .unwrap();
 
-    println!("file entries at directory /workspace :: {:?}", entries);
+    println!("file entries in /workspace :: {:?}", entries);
 
-    // let derived_proof =
-    //     entries.get(0).unwrap().to_str().unwrap().to_string() + &proof_path.clone().unwrap();
-
-    // println!("derived_proof: {:?}", derived_proof);
-
-    // let jproof = std::fs::read_to_string(derived_proof).unwrap();
-    println!("use proof_path!");
     let jproof = std::fs::read_to_string(proof_path.unwrap()).unwrap();
-
     let proofs: Proofs = serde_json::from_str(&jproof).unwrap();
     let result = verify(proofs);
 

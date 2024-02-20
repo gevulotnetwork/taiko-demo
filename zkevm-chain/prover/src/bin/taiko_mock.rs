@@ -11,25 +11,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     gevulot_shim::run(run_task)
 }
 
-// The main function that executes the prover program.
 fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
-    let mut new_args = vec!["dummy".to_string()];
+    let mut args = vec!["dummy".to_string()];
     for a in task.args.clone() {
-        new_args.push(a);
+        args.push(a);
     }
 
-    println!("taiko prover: new_args: {:?}", new_args);
+    println!("taiko prover: args: {:?}", args);
 
-    // let proof_path = prover_cmd(&new_args);
-    let proof_path = prover_mock(&new_args);
+    let proof_path = prover_mock(&args);
 
-    // Write generated proof to a file.
-    // std::fs::write("/workspace/proof.dat", b"this is a proof.")?;
-    println!("exit prover run_task");
+    println!("exit taiko_mock task");
 
-    // Return TaskResult with reference to the generated proof file.
     task.result(vec![], vec![proof_path])
 }
 
@@ -58,7 +53,7 @@ fn prover_mock(args: &Vec<String>) -> String {
         .collect::<Result<Vec<_>, io::Error>>()
         .unwrap();
 
-    println!("file entries at directory . :: {:?}", entries);
+    println!("file entries in root directory :: {:?}", entries);
 
     let entries = fs::read_dir("/workspace")
         .unwrap()
@@ -81,23 +76,12 @@ fn prover_mock(args: &Vec<String>) -> String {
     println!("proof_path: {:?}", proof_path);
     println!("witness_path: {:?}", witness_path);
 
-    // let path = entries.get(0).unwrap().to_str().unwrap().to_string();
-
-    // let derived_witness = path.clone() + &witness_path.clone().unwrap();
-    // let derived_proof = path.clone() + &proof_path.clone().unwrap();
-
-    // println!("derived_witness: {:?}", derived_witness);
-    // println!("derived_proof: {:?}", derived_proof);
-
-    // let jproof = std::fs::read_to_string(derived_witness).unwrap();
     let jproof = std::fs::read_to_string(witness_path.unwrap()).unwrap();
 
-    println!("mock taiko prover, write proof {:?} bytes", jproof.len());
-    println!("mock taiko prover, proof_path, {:?} bytes", proof_path);
+    println!("mock taiko prover, proof len = {:?} bytes", jproof.len());
+    println!("mock taiko prover, proof_path = {:?}", proof_path);
     println!("use proof_path!");
     write(proof_path.clone().unwrap(), jproof).unwrap();
-    // write(derived_proof.clone(), jproof).unwrap();
 
     proof_path.unwrap()
-    // "/workspace/proof.json".to_string()
 }
