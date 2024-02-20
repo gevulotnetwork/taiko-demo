@@ -127,14 +127,14 @@ In order to capture a witness, pass in:
 
 There are a few things to bear in mind when building or adapting a prover for use with Gevulot
 - you may not fork another process
-- may not have write permission to the root
+- you might not have permission for writing to the root directory
 
 Additionally, the shim require the use of a non-async main() function.  Any async calls must be adapted or rewritten. This will be covered in the section on creating unikernel images.
 
 
 ### 4.1 No forked processes
 
-As part of running the original Taiko prover, a Solidity script must be compiled.   In the commented out line [here](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L357-L358), a call the the solidity compiler executable `solc` happens on this line: https://github.com/taikoxyz/snark-verifier/blob/main/snark-verifier/src/loader/evm/util.rs#L105
+As part of running the original Taiko prover, a Solidity script must be compiled.   In the commented out line [here](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L357-L358), a call the the solidity compiler executable `solc` happens on [this line](https://github.com/taikoxyz/snark-verifier/blob/main/snark-verifier/src/loader/evm/util.rs#L105).
 
 When we comment that line in, as well as the import statement on lin 25 of shared_state.rs, and run the offline prover as we just have, we will get an error that looks like this:
 
@@ -144,7 +144,7 @@ Failed to spawn cmd with command 'solc':
 Operation not permitted (os error 1)
 ```
 
-In this particular case, the work around was not so simple:
+In this particular case, the work-around was not so simple:
 - build the solidity compiler library (C++, ) 
 - link the libraries to the prover executable.
 - import an external function from the library, and call it from Rust.
@@ -171,7 +171,7 @@ called `Result::unwrap()` on an `Err` value: Os { code: 28, kind: StorageFull, m
 
 File writing may only be done to specic paths, which will be covered later.
 
-## 4. Creating the prover and verifier images
+## 5. Creating the prover and verifier images
 
 We have added two binary executables to the prover package
 
@@ -179,21 +179,11 @@ One for the prover: `<link to main() in taiko_prover.rs>
 One for the verifier: `<link to main() in taiko_verifier.rs>
 
 
-## 4.1 Build the binaries
+## 5.1 Build the binaries
 
 define the API
 
-## 4.2 Run them as ops images
-
-## 5. A Problem!
-
-
-We saw in the last step that our proof did not finish.
-
-### 5.1
-
-We are launched another process in this line
-
+## 5.2 Run them as ops images
 
 
 
@@ -216,9 +206,9 @@ $ ./target/debug/gevulot show public-key --key-file localkey.pki
 04715a75faf7407de5a627a8cafb325e8abe146dfe4a1255963...
 ```
 
-### 5.2 Running the node
+### 6.2 Running the node
 
-#### 5.2.1 Start up the database
+#### 6.2.1 Start up the database
 
 In a fresh terminal, our first
 ```
@@ -226,7 +216,7 @@ cd crates/node
 podman-compose up
 ```
 
-#### 5.2.2 Reinitialize the database
+#### 6.2.2 Reinitialize the database
 
 While testing, it is often a good idea to start with a clean database.  Perform a manual reinitialization in a second terminal instance
 
@@ -237,7 +227,7 @@ cargo sqlx database create --database-url postgres://gevulot:gevulot@localhost/g
 cargo sqlx migrate run --database-url postgres://gevulot:gevulot@localhost/gevulot
 ```
 
-#### 5.2.3 Launch the node
+#### 6.2.3 Launch the node
 
 This is a possible command to launch the node.  Here, I've specified
 - the debug executable
@@ -257,7 +247,7 @@ Typically, you should see initial output like this:
 2024-02-15T16:50:50.791931Z  INFO gevulot::rpc_server: listening for json-rpc at 127.0.0.1:9944
 ```
 
-### 5.3 Deployment
+### 6.3 Deployment
 
 The deployment step registers a prover and verifier, being unikernel images.
 
@@ -279,7 +269,7 @@ Verifier hash:62ed37dfff36e7a5fd335b4d4fc3b3c27a2c624c5a1034efbf15ee11384b1d10.
 Tx Hash:fbb7df66a50610c89e2fbb70684e89a881d332db599080db6a1650022b5268ad
 ```
 
-### 5.3 Task execution
+### 6.3 Task execution
 
 
 
