@@ -132,8 +132,44 @@ There are a few things to bear in mind when building or adapting a prover for us
 Additionally, the shim require the use of a non-async main() function.  Any async calls must be adapted or rewritten. This will be covered in the section on creating unikernel images.
 
 
+### 4.1 No forked processes
+
+As part of running the original Taiko prover, a Solidity script must be compiled.   In the commented out line [here](https://github.com/gevulotnetwork/taiko-demo/blob/kyle-dev/zkevm-chain/prover/src/shared_state.rs#L357-L358), a call the the solidity compiler executable `solc` happens on this line: https://github.com/taikoxyz/snark-verifier/blob/main/snark-verifier/src/loader/evm/util.rs#L105
+
+When we comment that line in, as well as the import statement on lin 25 of shared_state.rs, and run the offline prover as we just have, we will get an error that looks like this:
+
+```
+thread 'tokio-runtime-worker' panicked at /home/ader/.cargo/git/checkouts/snark-verifier-79f3a4e94e319a00/612f495/snark-verifier/src/loader/evm/util.rs:118:13:
+Failed to spawn cmd with command 'solc':
+Operation not permitted (os error 1)
+```
+
+In this particular case, the work around was not so simple:
+- build the solidity compiler library (C++, ) 
+- link the libraries to the prover executable.
+- import an external function from the library, and call it from Rust.
 
 
+The build script was modified here:  https://github.com/gevulotnetwork/taiko-demo/blob/kyle-dev/zkevm-chain/prover/build.rs#L54-L68
+
+We have included the required static libraries as part of this package.  You may have to adjust the paths, depending are where some of the standard libraries may be located.
+
+The call to `gevulot_compile` is made from the `local_compile_solidity` function.
+
+### 4.2 Do not write to `./`
+
+Another problem we found was with the default behavior of the `gen_verifier` function.
+
+That happened here, where a solidity script gets written out under the name of `aggregation_plonk.sol` 
+https://github.com/gevulotnetwork/taiko-demo/blob/kyle-dev/zkevm-circuits/circuit-benchmarks/src/taiko_super_circuit.rs#L93
+
+If we comment that line in (and again, adjust the imports at line 23), we'll get the following error when running the prover:
+```
+thread 'tokio-runtime-worker' panicked at /home/ader/dev/gev/taiko-demo/zkevm-circuits/circuit-benchmarks/src/taiko_super_circuit.rs:91:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 28, kind: StorageFull, message: "No space left on device" }
+```
+
+File writing may only be done to specic paths, which will be covered later.
 
 ## 4. Creating the prover and verifier images
 
