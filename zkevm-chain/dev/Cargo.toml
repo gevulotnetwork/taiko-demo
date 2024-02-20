@@ -1,0 +1,16 @@
+[package]
+name = "zkevm_dev"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+eth-types = { git = "https://github.com/kylegranger/zkevm-circuits.git", branch = "kyle-dev", features = [
+    "warn-unimplemented",
+] }
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = { version = "1.0.78", features = ["preserve_order"] }
+
+[features]
+default = []
+autogen = []

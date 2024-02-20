@@ -1,0 +1,103 @@
+// use env_logger::Env;
+use clap::Parser;
+use gevulot_shim::{Task, TaskResult};
+use std::fs;
+use std::fs::write;
+use std::io;
+use std::{error::Error, result::Result};
+
+fn main() -> Result<(), Box<dyn Error>> {
+    println!("main()");
+    gevulot_shim::run(run_task)
+}
+
+// The main function that executes the prover program.
+fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
+    println!("run_task()");
+
+    let mut new_args = vec!["dummy".to_string()];
+    for a in task.args.clone() {
+        new_args.push(a);
+    }
+
+    println!("taiko prover: new_args: {:?}", new_args);
+
+    // let proof_path = prover_cmd(&new_args);
+    let proof_path = prover_mock(&new_args);
+
+    // Write generated proof to a file.
+    // std::fs::write("/workspace/proof.dat", b"this is a proof.")?;
+    println!("exit prover run_task");
+
+    // Return TaskResult with reference to the generated proof file.
+    task.result(vec![], vec![proof_path])
+}
+
+#[derive(Parser, Debug)]
+#[clap(author = "Taiko Prover", version, about, long_about = None)]
+pub struct TaikoProverConfig {
+    /// Required for offline_prover, legacy_prover, and verifier
+    #[clap(short, long, value_parser, verbatim_doc_comment)]
+    pub proof_path: Option<String>,
+    /// Required for witness_capture and offline_prover
+    #[clap(short, long, value_parser)]
+    pub witness_path: Option<String>,
+    /// Required for witness_capture, offline_prover, legacy_prover
+    #[clap(short, long, value_parser)]
+    pub kparams_path: Option<String>,
+}
+
+// #[tokio::main]
+fn prover_mock(args: &Vec<String>) -> String {
+    let arg_conf = TaikoProverConfig::parse_from(args);
+    println!("prover_mock");
+
+    let entries = fs::read_dir(".")
+        .unwrap()
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()
+        .unwrap();
+
+    println!("file entries at directory . :: {:?}", entries);
+
+    let entries = fs::read_dir("/workspace")
+        .unwrap()
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()
+        .unwrap();
+
+    println!("file entries at directory /workspace :: {:?}", entries);
+
+    // set our arguments, use defaults as applicable
+    let params_path = arg_conf.kparams_path;
+    let proof_path = arg_conf.proof_path;
+    let witness_path = arg_conf.witness_path;
+
+    assert!(params_path.is_some(), "pass in a kparams file");
+    assert!(proof_path.is_some(), "pass in a proof file for output");
+    assert!(witness_path.is_some(), "pass in a witness file for input");
+
+    println!("params_path: {:?}", params_path);
+    println!("proof_path: {:?}", proof_path);
+    println!("witness_path: {:?}", witness_path);
+
+    // let path = entries.get(0).unwrap().to_str().unwrap().to_string();
+
+    // let derived_witness = path.clone() + &witness_path.clone().unwrap();
+    // let derived_proof = path.clone() + &proof_path.clone().unwrap();
+
+    // println!("derived_witness: {:?}", derived_witness);
+    // println!("derived_proof: {:?}", derived_proof);
+
+    // let jproof = std::fs::read_to_string(derived_witness).unwrap();
+    let jproof = std::fs::read_to_string(witness_path.unwrap()).unwrap();
+
+    println!("mock taiko prover, write proof {:?} bytes", jproof.len());
+    println!("mock taiko prover, proof_path, {:?} bytes", proof_path);
+    println!("use proof_path!");
+    write(proof_path.clone().unwrap(), jproof).unwrap();
+    // write(derived_proof.clone(), jproof).unwrap();
+
+    proof_path.unwrap()
+    // "/workspace/proof.json".to_string()
+}

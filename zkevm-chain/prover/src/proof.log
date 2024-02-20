@@ -1,0 +1,31 @@
+./prover_cmd offline_prover -k kzg_bn254_22.srs -w witness-57437.json  -p 
+proof.json | tee prover.log
+block_num: None
+params_path: Some("kzg_bn254_22.srs")
+prover_mode: OfflineProver
+proof_path: Some("proof.json")
+rpc_url: None
+witness_path: Some("witness-57437.json")
+time1 1706713567411
+start compute_proof 0 ms
+start gen_pk 68852 ms
+done gen_pk 70626 ms
+start aggregate 70626 ms
+Start:   Create proof
+End:     Create proof ..............................................................49.699s
+done app_pk 175673 ms
+gen_evm_proof_gwc 175673 ms
+Start:   Create EVM proof
+End:     Create EVM proof ..........................................................189.229s
+v length 3808, 364909 ms
+start gen_verifier 364909 ms
+deployment_code len 91411
+Warning: This is a pre-release compiler version, please do not use it in production.
+
+evm_verifier_bytecode len 21881
+deploy code size: 21881 bytes, instances size: [1][18], calldata: 4384
+Verification success
+done evm_verify
+proof.aggregation.proof.len() 3808
+duration 364966 ms
+done creating and writing proof to Some("proof.json")

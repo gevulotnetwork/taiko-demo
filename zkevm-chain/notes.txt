@@ -1,0 +1,174 @@
+
+cargo build --release --package prover
+
+RUSTFLAGS='-L /home/ader/dev/eiger/gev/kyle-zkevm-chain/lib' cargo build --release --package prover
+
+./target/debug/gen_params 18 params.srs
+
+
+
+curl https://rpc.jolnir.taiko.xyz   -X POST   -H "Content-Type: application/json"   --data '{"method":"eth_getBlockByNumber","params":["0x14a98c", true],"id":1,"jsonrpc":"2.0"}'
+
+./scripts/get_block_fixtures.sh http://localhost:8547 0x1ceffc > block_1896444.json
+
+curl http://localhost:8547 \
+-X POST \
+-H "Content-Type: application/json" \
+--data '{"method":"eth_getBlockByNumber","params":["0x1ceffc", true],"id":1,"jsonrpc":"2.0"}'
+
+export PROVERD_PARAMS_PATH=../new-chain/k23_params.srs && export PROVERD_BLOCK_NUM=2310181 && export PROVERD_RPC_URL=http://localhost:8547 PROVERD_WITNESS_PATH=witness.json
+./target/debug/prover_cmd
+
+
+//
+// classic prover with live local network, no witness
+//
+export PROVERD_BLOCK_NUM=721526 && export PROVERD_PARAMS_PATH=k22_params.srs && export PROVERD_RPC_URL=http://localhost:8547 
+
+//
+// classic prover with live external network, no witness
+//
+export PROVERD_BLOCK_NUM=721526 && export PROVERD_PARAMS_PATH=k22_params.srs && export PROVERD_RPC_URL=http://34.79.190.231:8547 
+
+
+
+
+
+ops build ./target/release/taiko_prover -c prover_manifest.json
+ops build ./target/release/taiko_verifier -c verifier_manifest.json
+
+
+
+
+./prover_cmd | tee prover.log
+
+ssh kyle@34.79.190.231
+scp  ./target/release/prover_cmd kyle@34.79.190.231:gev/taiko/.
+scp  witness.json kyle@34.79.190.231:gev/taiko/.
+scp  k22* kyle@34.79.190.231:gev/taiko/.
+scp  .env kyle@34.79.190.231:gev/taiko/simple-taiko-node/.
+// DOCKER STUFF
+//
+
+sudo docker compose up -d
+sudo docker compose down
+sudo docker compose logs -f
+
+
+curl http://34.79.190.231:8547   -X POST   -H "Content-Type: application/json"   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+
+curl http://localhost:8547   -X POST   -H "Content-Type: application/json"   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+{"jsonrpc":"2.0","id":1,"result":"0x0"}
+
+//
+// generate witness only with RPC, don't do proof
+//
+export PROVERD_BLOCK_NUM=721526 && \
+export PROVERD_PARAMS_PATH=k22_params.srs && \
+export PROVERD_WITNESS_PATH=witness-4.json && \
+export PROVERD_RPC_URL=http://localhost:8547 && \
+export PROVERD_MODE=1
+
+export PROVERD_BLOCK_NUM=721526 && \
+export PROVERD_PARAMS_PATH=k22_params.srs && \
+export PROVERD_WITNESS_PATH=witness-5.json && \
+export PROVERD_RPC_URL=http://localhost:8547 && \
+export PROVERD_MODE=1
+
+curl -X POST \
+     -H 'Content-Type: application/json' \
+     -d '{"jsonrpc":"2.0","id":"id","method":"add","params":[1, 2]}' \
+     http://localhost:3000
+
+
+
+
+asdf: witness Some("witness-4.json")
+[2024-01-16T13:57:02Z INFO  prover::shared_state] compute_proof: ProofRequestOptions {
+        circuit: "super",
+        block: 721526,
+        prover_mode: 2,
+        rpc: "http://localhost:8547",
+        retry: false,
+        param: Some(
+            "k22_params.srs",
+        ),
+        witness: Some(
+            "witness-4.json",
+        ),
+        mock: false,
+        aggregate: false,
+        mock_feedback: false,
+        verify_proof: false,
+    }
+export PROVERD_BIND=[::]:8545 && export PROVERD_LOOKUP=prover-rpcd:8545
+
+// try a proof via RPC
+curl http://localhost:8545 -X POST -H "Content-Type: application/json" --data '
+{"method":"proof","params":["circuit":"super", "block":721526, "prover_mode":1,  "rpc":"http://localhost:8547", "retry":false],"id":1,"jsonrpc":"2.0"}'
+
+curl http://localhost:8545 -X POST -H "Content-Type: application/json" --data '
+{"method":"proof","params":["super", 721526, 1, "http://localhost:8547", false],"id":1,"jsonrpc":"2.0"}'
+
+curl http://localhost:8545 -X POST -H "Content-Type: application/json" --data '
+{"method":"proof","params":[{"circuit":"super", "block":721526, "prover_mode":1,  "rpc":"http://localhost:8547", "retry":false}],"id":1,"jsonrpc":"2.0"}'
+
+git checkout -b kyle-alpha6 && git push origin kyle-alpha6 && git push --set-upstream origin kyle-alpha6
+
+10% 
+
+// get latest Taiko L2 block
+curl http://35.195.113.51:8547 -X POST -H "Content-Type: application/json" --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+
+curl http://35.195.113.51:8547   -X POST   -H "Content-Type: application/json"   --data '{"method":"eth_getBlockByNumber","params":["0xe05d", true],"id":1,"jsonrpc":"2.0"}'
+
+
+// get latest holesky L1 block
+curl http://35.195.113.51:8545 -X POST -H "Content-Type: application/json" --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+
+
+17664
+
+// Mode 1: Do my witness capture for specific block and exit (via panic)
+export PROVERD_BLOCK_NUM=17664 && \
+export PROVERD_PARAMS_PATH=kzg_bn254_22.srs && \
+export PROVERD_WITNESS_PATH=witness-17664.json && \
+export PROVERD_RPC_URL=http://35.195.113.51:8547 && \
+export PROVERD_MODE=1
+
+
+// Mode 2: run the prover with input witness file
+export PROVERD_BLOCK_NUM=17664 && \
+export PROVERD_PARAMS_PATH=kzg_bn254_22.srs && \
+export PROVERD_WITNESS_PATH=witness-17664.json && \
+export PROVERD_RPC_URL=http://dummy.com && \
+export PROVERD_MODE=2
+
+// Mode 3: run the prover normally with input block number, not witness file
+export PROVERD_BLOCK_NUM=17664 && \
+export PROVERD_PARAMS_PATH=kzg_bn254_22.srs && \
+export PROVERD_WITNESS_PATH=katla-17664.json && \
+export PROVERD_RPC_URL=http://35.195.113.51:8547 && \
+export PROVERD_MODE=3
+
+
+export PROVERD_RPC_URL=http://35.195.113.51:8547 && \
+
+
+// 
+curl http://0.0.0.0:9000 -X POST -H "Content-Type: application/json" --data \
+'{"jsonrpc": "2.0", "method": "proof","params": [{"circuit": "super","block": 4500, "rpc": "http://35.195.113.51:8547","protocol_instance":{"l1_signal_service": "","l2_signal_service": "","l2_contract": "","request_meta_data":{"id": 0,"timestamp": 0,"l1_height": 0,"l1_hash": "","deposits_hash": "","blob_hash": "","tx_list_byte_offset": 0,"tx_list_byte_size": 0,"gas_limit": 0,"coinbase": "","difficulty": "","extra_data": "","min_tier": 0,"blob_used": false,"parent_metahash": ""},"block_hash": "","parent_hash": "","signal_root": "","graffiti": "","prover": "","treasury": "","gas_used": 0,"parent_gas_used": 0,"block_max_gas_limit": 0,"max_transactions_per_block": 0,"max_bytes_per_tx_list": 0,"anchor_gas_limit": 0},"retry": false,"param":"kzg_bn254_22.srs","mock": false,"aggregate": false,"mock_feedback": false,"verify_proof": false}],"id": 1}'
+
+10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663
+0xB20BB9105e007Bd3E0F73d63D4D3dA2c8f736b77
+
+curl http://0.0.0.0:9000 -X POST -H "Content-Type: application/json" --data \
+'{"jsonrpc": "2.0", "method": "proof","params": [{"circuit": "super","block": 4500, "rpc": "http://35.195.113.51:8547","protocol_instance":{"l1_signal_service": "","l2_signal_service": "","l2_contract": "","request_meta_data":{"id": 0,"timestamp": 0,"l1_height": 0,"l1_hash": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","deposits_hash": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","blob_hash": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","tx_list_byte_offset": 0,"tx_list_byte_size": 0,"gas_limit": 0,"coinbase": "B20BB9105e007Bd3E0F73d63D4D3dA2c8f736b77","difficulty": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","extra_data": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","min_tier": 0,"blob_used": false,"parent_metahash": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663"},"block_hash": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","parent_hash": "4be11a6fd983a7e905416e6e918081762e0aa9651822ae9447c7f33d52bb0acb","signal_root": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","graffiti": "10d1404faa8517c1bd5cc2931adff7a9a1d89468d9cce386bef6d9fc4ff45663","prover": "ee85e2fe0e26891882a8CD744432d2BBFbe140dd","treasury": "","gas_used": 0,"parent_gas_used": 0,"block_max_gas_limit": 0,"max_transactions_per_block": 0,"max_bytes_per_tx_list": 0,"anchor_gas_limit": 0},"retry": false,"param":"kzg_bn254_22.srs","mock": false,"aggregate": false,"mock_feedback": false,"verify_proof": false}],"id": 1}'
+
+ssh kyle@35.205.153.134
+scp  ./target/release/prover_rpcd kyle@130.211.96.202:prover_test/.
+scp  ./kzg_bn254_22.srs kyle@130.211.96.202:prover_test/.
+
+./prover_rpcd --bind 0.0.0.0:9000 | tee prover.log
+
+./prover_cmd legacy_prover -b 57437 -k kzg_bn254_22.srs -r http://35.195.113.51:8547 -p proof-legacy-57437.json
