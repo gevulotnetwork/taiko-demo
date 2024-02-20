@@ -134,7 +134,7 @@ Additionally, the shim require the use of a non-async main() function.  Any asyn
 
 ### 4.1 No forked processes
 
-As part of running the original Taiko prover, a Solidity script must be compiled.   In the commented out line [here](https://github.com/gevulotnetwork/taiko-demo/blob/kyle-dev/zkevm-chain/prover/src/shared_state.rs#L357-L358), a call the the solidity compiler executable `solc` happens on this line: https://github.com/taikoxyz/snark-verifier/blob/main/snark-verifier/src/loader/evm/util.rs#L105
+As part of running the original Taiko prover, a Solidity script must be compiled.   In the commented out line [here](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L357-L358), a call the the solidity compiler executable `solc` happens on this line: https://github.com/taikoxyz/snark-verifier/blob/main/snark-verifier/src/loader/evm/util.rs#L105
 
 When we comment that line in, as well as the import statement on lin 25 of shared_state.rs, and run the offline prover as we just have, we will get an error that looks like this:
 
@@ -150,7 +150,7 @@ In this particular case, the work around was not so simple:
 - import an external function from the library, and call it from Rust.
 
 
-The build script was modified here:  https://github.com/gevulotnetwork/taiko-demo/blob/kyle-dev/zkevm-chain/prover/build.rs#L54-L68
+The build script was modified here:  https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/build.rs#L54-L68
 
 We have included the required static libraries as part of this package.  You may have to adjust the paths, depending are where some of the standard libraries may be located.
 
@@ -161,7 +161,7 @@ The call to `gevulot_compile` is made from the `local_compile_solidity` function
 Another problem we found was with the default behavior of the `gen_verifier` function.
 
 That happened here, where a solidity script gets written out under the name of `aggregation_plonk.sol` 
-https://github.com/gevulotnetwork/taiko-demo/blob/kyle-dev/zkevm-circuits/circuit-benchmarks/src/taiko_super_circuit.rs#L93
+https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-circuits/circuit-benchmarks/src/taiko_super_circuit.rs#L93
 
 If we comment that line in (and again, adjust the imports at line 23), we'll get the following error when running the prover:
 ```
