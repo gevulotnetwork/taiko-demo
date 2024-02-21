@@ -62,7 +62,6 @@ async fn main() {
             assert!(block_num.is_some(), "pass in a block_num");
             assert!(params_path.is_some(), "pass in a kparams file");
             assert!(rpc_url.is_some(), "pass in an L2 RPC url");
-            assert!(proof_path.is_some(), "pass in a proof file for output");
         }
         ProverMode::Verifier => {
             assert!(proof_path.is_some(), "pass in a proof file for input");

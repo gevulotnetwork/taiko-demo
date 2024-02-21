@@ -37,21 +37,30 @@ point to various places in the code to illustrate
 - where the verifier is called
 
 
-## 3 Adapt the prover.
+There are 3 main parts to this coding process
+1. Adapt the `prover_cmd` binary to support witness capture, offline proving and verification
+2. Create a new binary for the prover which we will package, as well as one for the verifier
+3. Package these both as Nanos unikernel images.
 
-Here we will describe all the changes in the code required to get to where we want to be. We have to rewrite parts of the prover to do two things:
-1. Stop the process once the witness is generated
-2. Serialize the witness and write it to a file path that gets passed in.
 
-Additionally, we like to 
-- pass in a witness file and generate a proof from that
-- pass in a proof and perform the verfication.
+## 3 Adapt `prover_cmd`.
 
-We will do this in four steps
-1. implement witness capture, k
-2. enable offline proving and verification
-3. package the prover and verifier binaries to be used in a unikernel, and run them.  Additionally, we fix any problems that emerge (spoiler alert: one or two do!)
-4. build and run the unikernel, fixing any problems that emerge (spoiler alert: one or two do!)
+The original `prover_cmd` binary (whose main function is [here](https://github.com/taikoxyz/zkevm-chain/blob/v0.6.0-alpha/prover/src/bin/prover_cmd.rs#L12)) is a convenient point of entry for us into the Taiko prover.  While the Taiko provers are normally instantiated vai RPC requests, the functionality is more or less exposed here in a standalone executable.  Three parameters are passed in via the environment:
+- a block number
+- an RPC endpoint for the L2 node
+- a proof parameters file
+
+The basic outline of what we need to do is to serialize a witness, in conjunction with a live L1/L2 node setup.  Once we have that, then we can adapt the prover to use a passed in file, which eliminates the need for an online connection.
+
+
+The changes we have made in this executable may be summarized here:
+- introduce a prover mode enum parameter to enable different behaviors
+  - witness capture: with a block number and RPC url, grab the witness and serialize it to a file
+  - offline prover: with a witness and proof params file, generate a proof and write it to disk
+  - legacy prover: this operates the same as prover_cmd originally did
+  - verifier: receive a proof and verify it
+- use command line arguments instead of environment variables
+
 
 #### Download the proof parameters file
 
@@ -128,6 +137,7 @@ In order to capture a witness, pass in:
 There are a few things to bear in mind when building or adapting a prover for use with Gevulot
 - you may not fork another process
 - you might not have permission for writing to the root directory
+- you do not have access to the network
 
 Additionally, the shim require the use of a non-async main() function.  Any async calls must be adapted or rewritten. This will be covered in the section on creating unikernel images.
 
@@ -170,6 +180,12 @@ called `Result::unwrap()` on an `Err` value: Os { code: 28, kind: StorageFull, m
 ```
 
 File writing may only be done to specic paths, which will be covered later.
+
+### 4.3 No networking
+
+
+
+
 
 ## 5. Creating the prover and verifier images
 

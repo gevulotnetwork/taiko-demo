@@ -14,6 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
+    // to synchronize argument parsing
     let mut args = vec!["dummy".to_string()];
     for a in task.args.clone() {
         args.push(a);
@@ -21,11 +22,11 @@ fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
 
     println!("taiko prover: args: {:?}", args);
 
-    let proof_path = prover_mock(&args);
+    let proof_result = prover_mock(&args)?;
 
-    println!("exit taiko_mock task");
+    println!("prover_mock result: {:?}", proof_result);
 
-    task.result(vec![], vec![proof_path])
+    task.result(vec![], vec![proof_result])
 }
 
 #[derive(Parser, Debug)]
@@ -43,7 +44,7 @@ pub struct TaikoProverConfig {
 }
 
 // #[tokio::main]
-fn prover_mock(args: &Vec<String>) -> String {
+fn prover_mock(args: &Vec<String>) -> Result<String, Box<dyn Error>> {
     let arg_conf = TaikoProverConfig::parse_from(args);
     println!("prover_mock");
 
@@ -68,20 +69,29 @@ fn prover_mock(args: &Vec<String>) -> String {
     let proof_path = arg_conf.proof_path;
     let witness_path = arg_conf.witness_path;
 
-    assert!(params_path.is_some(), "pass in a kparams file");
-    assert!(proof_path.is_some(), "pass in a proof file for output");
-    assert!(witness_path.is_some(), "pass in a witness file for input");
+    if witness_path.is_none() {
+        return Err(String::from("no witness file parameter").into());
+    }
+    if params_path.is_none() {
+        return Err(String::from("no parameters file parameter").into());
+    }
+    if proof_path.is_none() {
+        return Err(String::from("no proof file parameter").into());
+    }
 
     println!("params_path: {:?}", params_path);
     println!("proof_path: {:?}", proof_path);
     println!("witness_path: {:?}", witness_path);
 
-    let jproof = std::fs::read_to_string(witness_path.unwrap()).unwrap();
+    let jproof = std::fs::read_to_string(witness_path.unwrap())?;
 
     println!("mock taiko prover, proof len = {:?} bytes", jproof.len());
     println!("mock taiko prover, proof_path = {:?}", proof_path);
     println!("use proof_path!");
-    write(proof_path.clone().unwrap(), jproof).unwrap();
+    write(
+        proof_path.clone().expect("pass in a proof file for output"),
+        jproof,
+    )?;
 
-    proof_path.unwrap()
+    Ok(proof_path.unwrap())
 }
