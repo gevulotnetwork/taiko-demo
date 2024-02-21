@@ -16,6 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
+    // to synchronize argument parsing
     let mut args = vec!["dummy".to_string()];
     for a in task.args.clone() {
         args.push(a);
@@ -23,7 +24,7 @@ fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
 
     println!("taiko prover: args: {:?}", args);
 
-    let proof_path = prover_cmd(&args);
+    let proof_path = taiko_prover(&args)?;
 
     println!("exit prover run_task");
 
@@ -46,7 +47,7 @@ pub struct TaikoProverConfig {
 }
 
 // #[tokio::main]
-fn prover_cmd(args: &Vec<String>) -> String {
+fn taiko_prover(args: &Vec<String>) -> Result<String, Box<dyn Error>> {
     let arg_conf = TaikoProverConfig::parse_from(args);
 
     // set our arguments, use defaults as applicable
@@ -58,9 +59,15 @@ fn prover_cmd(args: &Vec<String>) -> String {
     println!("proof_path: {:?}", proof_path);
     println!("witness_path: {:?}", witness_path);
 
-    assert!(params_path.is_some(), "pass in a kparams file");
-    assert!(proof_path.is_some(), "pass in a proof file for output");
-    assert!(witness_path.is_some(), "pass in a witness file for input");
+    if witness_path.is_none() {
+        return Err(String::from("no witness file parameter").into());
+    }
+    if params_path.is_none() {
+        return Err(String::from("no parameters file parameter").into());
+    }
+    if proof_path.is_none() {
+        return Err(String::from("no proof file parameter").into());
+    }
 
     // now set dummy RPC url and block number which will not be used.
     let rpc_url = "http://dummy.com".to_string();
@@ -125,12 +132,12 @@ fn prover_cmd(args: &Vec<String>) -> String {
         ..Default::default()
     };
 
-    let proofs = state.prove(&request).unwrap();
+    let proofs = state.prove(&request)?;
     let proof_path = proof_path.unwrap();
 
     let jproof = json!(proofs).to_string();
     println!("taiko prover, write proof string, {:?} bytes", jproof.len());
     println!("taiko prover, proof_path, {:?} bytes", proof_path);
     write(proof_path.clone(), jproof).unwrap();
-    proof_path
+    Ok(proof_path)
 }
