@@ -13,20 +13,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
+    // to synchronize argument parsing
     let mut args = vec!["dummy".to_string()];
     for a in task.args.clone() {
         args.push(a);
     }
-    println!("taiko verifier: args: {:?}", &args);
+    println!("taiko_verifier: args: {:?}", &args);
 
-    let result = verifier_cmd(&args);
-    let result: String = match result {
+    let verifier_result = taiko_verifier(&args)?;
+
+    let result: String = match verifier_result {
         true => "Taiko verifier result: success".to_string(),
         false => "Taiko verifier result: fail".to_string(),
     };
 
     println!("done with taiko verification, result is {:?}", result);
-    println!("exit taiko_verifier task");
     task.result(vec![], vec![])
 }
 
@@ -39,8 +40,8 @@ pub struct TaikoVerifierConfig {
 }
 
 // #[tokio::main]
-fn verifier_cmd(args: &Vec<String>) -> bool {
-    println!("verifier_cmd");
+fn taiko_verifier(args: &Vec<String>) -> Result<bool, Box<dyn Error>> {
+    println!("taiko_verifier");
     let arg_conf = TaikoVerifierConfig::parse_from(args);
 
     let proof_path = arg_conf.proof_path;
@@ -61,9 +62,13 @@ fn verifier_cmd(args: &Vec<String>) -> bool {
 
     println!("file entries in /workspace :: {:?}", entries);
 
-    let jproof = std::fs::read_to_string(proof_path.unwrap()).unwrap();
-    let proofs: Proofs = serde_json::from_str(&jproof).unwrap();
+    if proof_path.is_none() {
+        return Err(String::from("no proof file parameter").into());
+    }
+
+    let jproof = std::fs::read_to_string(proof_path.unwrap())?;
+    let proofs: Proofs = serde_json::from_str(&jproof)?;
     let result = verify(proofs);
 
-    result
+    Ok(result)
 }
