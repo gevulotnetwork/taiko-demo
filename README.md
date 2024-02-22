@@ -45,21 +45,21 @@ The original `prover_cmd` binary (whose main function is [here](https://github.c
 - an RPC endpoint for the L2 node
 - a proof parameters file
 
-The basic outline of what we need to do is to serialize a witness, in conjunction with a live L1/L2 node setup.  Once we have that, then we can adapt the prover to use a passed in file, which eliminates the need for an online connection.
+The basic outline of what we need to do is to serialize a witness, in conjunction with a live L1/L2 node setup.  Once we have that, then we can adapt the prover to use that file, eliminating the need for an online connection.
 
 
 The changes we have made in this executable may be summarized here:
-- introduce a prover mode enum parameter to enable different behaviors
+- introduce a prover mode enum parameter to enable different behaviors:
   - witness capture: with a block number and RPC url, grab the witness and serialize it to a file
-  - offline prover: with a witness and proof params file, generate a proof and write it to disk
+  - offline prover: given  a witness and proof params file, generate a proof and write it to disk
   - legacy prover: this operates the same as prover_cmd originally did
-  - verifier: receive a proof and verify it
+  - verifier: take a proof and verify it
 - use command line arguments instead of environment variables
 
 
 #### Download the proof parameters file
 
-In order to do any kind of proving, you will first need a 512MiB proof parameters file. The way the examples are set up here, we expect to find it in the `gevulot` folder
+In order to do any kind of proving, we will first need a 512MiB proof parameters file. The way the examples are set up here, we expect to find it in the `gevulot` folder
 
 While at the root of the `zkevm-chain` package, run this:
 
@@ -69,21 +69,7 @@ wget -P ./gevulot https://storage.googleapis.com/zkevm-circuits-keys/kzg_bn254_2
 
 ### 3.1 Witness capture
 
-We have rewritten the prover_cmd binary, the main function originally here:
-
-The first thing we did was exchange the arguments passed in as environment variables for command line parsing.
-
-We also defined a prover mode enum, for the four actions we will eventually support:
-- create a witness for a given block number
-- create a proof from a witness
-- perform a verification from a proof
-- there's also a legacy prover, that takes a block number and creates a proof directly.
-
-
-The data here is gathered from querying the node for blocks, block transactions, and code.  These are the specific calls that get made
-
-
-This part of the proof takes as input an L2 block number.  In the version is `zkevm-chain` we are using, that is a Katla testnet node.
+The data here is gathered from querying the node for blocks, block transactions, and code.  These are the specific calls that get made:
 
 ```
 eth_getBlockByNumber
@@ -93,13 +79,11 @@ eth_getCode
 eth_getProof
 ```
 
+The first step was to add Serialize and Deserialize traits to  the `CircuitWitness`.  This necessitated adding serialization to the component structs in the `zkevm-circuits` packages.  We have forked that, here in this repository next to `zkevm-chain`.  The prover `Cargo.toml` file links to that library.
 
+The code that serializes the witness, writing it out is here: 
+https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L667-L671
 
-We will use the prover_cmd.
-
-#### Witness Serialization
-
-We have to add the Deserialize and Serialize traits for the 
 
 #### Write it out
 In order to capture a witness, the arguments are: 
@@ -108,6 +92,12 @@ In order to capture a witness, the arguments are:
 - `-r` :  RPC endpoint, e.g. `http://35.205.130.127:8547`
 - `-w` :  output witness file
 - 
+
+If you have access to a Katla L2 node RPC endpoint, you can go ahead and create a witness. An example
+```
+./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547 -w witness.json
+```
+
 
 
 ### 3.2 Offline prover
@@ -118,34 +108,33 @@ The arguments are...
 - `-p` :  output proof file
 
 
-We have exposed the legacy prover, as well as a verifier
 
- >The code may be built and run. For witnes cap...
+Running it can take some time, depending on system resources
 
-In order to capture a witness, pass in: 
-- a block number, 
-- parameters file path, usually kzg_bn254_22.srs
-- an RPC endpoint.  This is the L2 Katla node that you are running.
-- 
+```
+./target/release/prover_cmd offline_prover -k gevulot/kzg_bn254_22.srs -w gevulot/witness-57437.json  -p proof.json
+```
+
+See the next section for running the verifier and legacy prover.
+
 
 ### 3.3 Summary
 
 The four modes of `prover_cmd` are illustrates with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.
 
 ```
-./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -w witness-57437.json
-./target/release/prover_cmd offline_prover -k gevulot/kzg_bn254_22.srs -w witness-57437.json  -p proof.json
-./target/release/prover_cmd legacy_prover -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547  -p proof-legacy-57437.json
+./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547 -w witness.json
+./target/release/prover_cmd offline_prover -k gevulot/kzg_bn254_22.srs -w gevulot/witness-57437.json -p proof.json
+./target/release/prover_cmd legacy_prover -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547 -p proof.json
 ./target/release/prover_cmd verifier -p proof.json
 ```
 
 
 ## 4. Constraints
 
-Now that we have a binary that can run with four different actions, we can try to run them as an Nanos unikernel.  This section deals with some constraints  to bear in mind when building or adapting a prover for use with Gevulot
-- you may not fork another process
-- you might not have permission for writing to the root directory
-- you do not have access to the network
+Now that we have a binary that can run with four different actions, we can try to run them as an Nanos unikernel.  This section deals with two constraints to bear in mind when building or adapting a prover for use with Gevulot
+1. you may not fork another process
+2. you might not have permission for writing to the root directory
 
 Additionally, our shim require the use of a non-async main() function.  Any async calls must be adapted or rewritten. This will be covered in the section on creating unikernel images.
 
@@ -240,16 +229,22 @@ One for the prover: [taiko_prover.rs](https://github.com/gevulotnetwork/taiko-de
 One for the verifier: [taiko_verifier.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_verifier.rs)
 One for a mock prover: [taiko_mock.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_mock.rs)
 
+Build them
+```
+cargo build --release
+```
 
 ## 5.1 Build the binaries
 
+```
+ops build ./target/release/taiko_prover -n -c ./gevulot/manifest_prover.json && \
+ops build ./target/release/taiko_verifier -n -c ./gevulot/manifest_verifier.json && \
+ops build ./target/release/taiko_mock -n -c ./gevulot/manifest_mock.json
+```
 
-## 5.2 Run them as ops images
+We are now ready to run the images on Gevulot.
 
-
-
-## 6. Executing the prover
-
+## 6. Executing the prover on Gevulot
 
 ### 6.1 Prerequites
 
