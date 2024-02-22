@@ -101,20 +101,20 @@ The arguments are:
 
 
 
-Running it can take some time, depending on system resources
+Running it can take some time, depending on system resources.
 
 ```
 ./target/release/prover_cmd offline_prover -k gevulot/kzg_bn254_22.srs -w gevulot/witness-57437.json  -p proof.json
 ```
 
-See the next section for running the verifier and legacy prover.
 
-
-### 3.3 Summary
+### 3.3 Verifier and legacy prover
 
 We have exposed a verifier mode, which is normally not done separately by `prover_cmd`, but rather at the end of the proof generation as a check.  We have encapsulated that code for our verifier.  There is also verification done on-chain, by the L1 node. 
 
 Additionally, we support the legacy prover, which uses a live RPC connection to generate the witness, being used directly to generate the proof. We use command line arguments here, instead of environment variables used in the original version.
+
+### 3.4 Summary
 
 The four modes of `prover_cmd` are illustrated with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.  They should all work as written, given a valid connection.
 
@@ -244,7 +244,7 @@ cargo build --release
 
 ### 5.2 Build the images
 
-An ops images is created from a binary and a manifest, which may also include other static files.  In this use case, our 512MiB parameters file is part of the package.
+An ops image is created from a binary and a manifest, which may also include other static files.  In this use case, our 512MiB parameters file is part of the package.
 
 ```
 ops build ./target/release/taiko_prover -n -c ./gevulot/manifest_prover.json && \
@@ -256,17 +256,20 @@ We are now ready to run the images on Gevulot!
 
 ## 6. Executing the prover on Gevulot
 
+You now should have installed the [gevulot repository](https://github.com/gevulotnetwork/gevulot), parallel to the `taiko-demo` folder. We will now be working from there.
+
+
 ### 6.1 Prerequites
 
 Here is the [Gevulot installation guide](https://github.com/gevulotnetwork/gevulot/blob/main/INSTALL.md).
 
 You will need to obtain two keys for whitelisting later, namely, the local key and the node node.
-To display them, you will use the `gevulot show` command.  
+To display them, you will use the `gevulot show` command. We have built a debug
 
 ```
-$ gevulot show public-key --key-file /var/lib/gevulot/node.key 
+$ ./target/debug/gevulot show public-key --key-file /var/lib/gevulot/node.key
 042bd568e378a3b71a97e867f82131b849fdfa271f0fc6238ef...
-$ ./target/debug/gevulot show public-key --key-file localkey.pki 
+$ ./target/debug/gevulot show public-key --key-file localkey.pki
 04715a75faf7407de5a627a8cafb325e8abe146dfe4a1255963...
 ```
 
@@ -289,11 +292,12 @@ cd crates/node
 cargo sqlx database drop --database-url postgres://gevulot:gevulot@localhost/gevulot  (type `y` to confirm)
 cargo sqlx database create --database-url postgres://gevulot:gevulot@localhost/gevulot
 cargo sqlx migrate run --database-url postgres://gevulot:gevulot@localhost/gevulot
+cd ../..
 ```
 
 #### 6.2.3 Whitelist your keys
 
-Following a database initialization, you must whitelist your keys. Those strings were obtained with the `show` command above.
+Following a database initialization, you must whitelist your keys. Those strings were obtained with the `show` command above.  Back in the project root, run:
 
 ```
 ./target/debug/gevulot peer 04715a75faf7407de5a627a8cafb325e8abe146dfe4a1255... whitelist
@@ -323,18 +327,15 @@ Typically, you should see initial output like this:
 
 ### 6.3 Deployment
 
-The deployment step registers a prover and verifier, being unikernel images.
-
-You must register a prover and a verifier together, as a pair.
+The deployment step registers a prover and verifier, being unikernel images. They must be registered together, as a pair.
 
 ```
 gevulot-cli deploy --name taiko-zkevm --prover /home/ader/.ops/images/taiko_prover --verifier /home/ader/.ops/images/taiko_verifier
 ```
 
-The output will include hash values that should be copied and saved, 
+The output will include hash values that should be copied.
 
 ```
-$ gevulot-cli deploy --name taiko-zkevm --prover /home/ader/.ops/images/taiko_prover --verifier /home/ader/.ops/images/taiko_verifier
 Start prover / verifier deployment
   [00:00:02] [##########################################################] 25.54 MiB/25.54 MiB (taiko_verifier-0.0s)
   [00:00:02] [##########################################################] 563.69 MiB/563.69 MiB (taiko_prover-0.0s)Prover / Verifier deployed correctly.
@@ -343,7 +344,7 @@ Verifier hash:62ed37dfff36e7a5fd335b4d4fc3b3c27a2c624c5a1034efbf15ee11384b1d10.
 Tx Hash:fbb7df66a50610c89e2fbb70684e89a881d332db599080db6a1650022b5268ad
 ```
 
-You'll need to save off the prover and verifier hashes in order to execute them.
+Copy the prover and verifier hash strings -- they will be used in the next step.
 
 ### 6.3 Task execution
 
