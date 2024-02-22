@@ -13,7 +13,7 @@ Our goalW is to take you through all the steps to get this prover executing in G
 - how we created standalone prover and verifier binaries
 - how we adapted the binaries to run in the Gevulot environment
 
-This tutorial is meant to be run from the `zkevm-chain` folder.
+This tutorial is meant to be run from the `zkevm-chain` folder.  The repository `taiko-demo` repository itself, should be installed in the same folder (parallel to) as the [Gevulot](https://github.com/gevulotnetwork/gevulot) repository (for linking to the `gevulot_shim` library).
 
 
 ## 2. The Prover
@@ -79,13 +79,12 @@ The code that serializes the witness, writing it out is here:
 https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L667-L671
 
 
-#### Write it out
 In order to capture a witness, the arguments are: 
 - `-b` :  block number
 - `-k` :  proof parameters files: `gevulot/kzg_bn254_22.srs`
 - `-r` :  RPC endpoint, e.g. `http://35.205.130.127:8547`
 - `-w` :  output witness file
-- 
+
 
 If you have access to a Katla L2 node RPC endpoint, you can go ahead and create a witness. An example
 ```
@@ -95,8 +94,8 @@ If you have access to a Katla L2 node RPC endpoint, you can go ahead and create 
 
 ### 3.2 Offline prover
 
-The arguments are...
-- `-k` :  proof parameters files: `gevulot/kzg_bn254_22.srs`
+The arguments are:
+- `-k` :  proof parameters file: `gevulot/kzg_bn254_22.srs`
 - `-w` :  input witness file
 - `-p` :  output proof file
 
@@ -113,11 +112,11 @@ See the next section for running the verifier and legacy prover.
 
 ### 3.3 Summary
 
-We have exposed a verifier mode, which is normally not done separately by prover_cmd, but rather at the end of the proof generation. We have encapsulated that code for our verifier.
+We have exposed a verifier mode, which is normally not done separately by `prover_cmd`, but rather at the end of the proof generation as a check.  We have encapsulated that code for our verifier.  There is also verification done on-chain, by the L1 node. 
 
-Additionally, we added support for the legacy prover, which uses a live RPC connection to generate the witness and then directly generate the proof. Of course here, we use command line arguments, instead of environment variables used in the original version.
+Additionally, we support the legacy prover, which uses a live RPC connection to generate the witness, being used directly to generate the proof. We use command line arguments here, instead of environment variables used in the original version.
 
-The four modes of `prover_cmd` are illustrated with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.  They should all work as written.
+The four modes of `prover_cmd` are illustrated with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.  They should all work as written, given a valid connection.
 
 ```
 ./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547 -w witness.json
@@ -190,13 +189,13 @@ Failed to spawn cmd with command 'solc':
 Operation not permitted (os error 1)
 ```
 
-In this particular case, the work-around was not so simple:
-- build the solidity compiler library (C++, ) 
+In this particular case, the work-around was not so simple. We had to:
+- build the [Solidity compiler library](https://github.com/ethereum/solidity) (C++) 
 - link the libraries to the prover executable.
 - import an external function from the library, and call it from Rust.
 
 
-The build script was modified here:  https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/build.rs#L54-L68
+After we built (and slightly modified) the library, we added the static libs here here:  https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/build.rs#L54-L68
 
 We have included the required static libraries as part of this package.  You may have to adjust the paths, depending are where some of the standard libraries may be located.
 
@@ -215,14 +214,14 @@ thread 'tokio-runtime-worker' panicked at /home/ader/dev/gev/taiko-demo/zkevm-ci
 called `Result::unwrap()` on an `Err` value: Os { code: 28, kind: StorageFull, message: "No space left on device" }
 ```
 
-File writing may only be done to specifi paths, which will be covered later.
+File writing may only be done to specific paths.
 
 
 ## 5. Creating the prover and verifier images
 
 ### 5.1 Overview
 
-The runtime environment in which the provers run have very specfic structure for main() and the run tasks.
+The runtime environment in which the provers run have very specfic structure for `main()` and the run tasks.
 
 The signature of main [here in the mock prover](), looks like this
 
