@@ -5,7 +5,7 @@ use std::{error::Error, fs, io, result::Result};
 use zkevm_common::prover::*;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("main()");
+    println!("taiko_verifier main()");
     gevulot_shim::run(run_task)
 }
 

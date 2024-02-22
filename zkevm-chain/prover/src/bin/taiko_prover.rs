@@ -8,7 +8,7 @@ use std::{error::Error, result::Result};
 use zkevm_common::prover::*;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("main()");
+    println!("taiko_prover main()");
     gevulot_shim::run(run_task)
 }
 

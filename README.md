@@ -1,5 +1,4 @@
 # Taiko ZKEVM: a sample prover for Gevulot
-**[in progress]**
 
 
 ## 1. Overview
@@ -17,10 +16,7 @@ The goal of this document is to take you through all the steps to get this prove
 - we can examine the proofs written to the L1 node, which is Holesky in this case
 
 This tutorial is meant to be run from the `zkevm-chain` folder.
-
-```
-cd zkevm-chain
-```
+W
 
 ## 2. The Prover
 
@@ -40,7 +36,7 @@ There are 3 main parts to this coding process
 
 ## 3 Adapt `prover_cmd`
 
-The original `prover_cmd` binary (whose main function is [here](https://github.com/taikoxyz/zkevm-chain/blob/v0.6.0-alpha/prover/src/bin/prover_cmd.rs#L12)) is a convenient point of entry for us into the Taiko prover.  While the Taiko provers are normally instantiated vai RPC requests, the functionality is more or less exposed here in a standalone executable.  Three parameters are passed in via the environment:
+The original `prover_cmd` binary (whose main function is [here](https://github.com/taikoxyz/zkevm-chain/blob/v0.6.0-alpha/prover/src/bin/prover_cmd.rs#L12)) is a convenient point of entry for us into the Taiko prover.  While the Taiko provers are normally instantiated via RPC requests, the functionality is also exposed here as a standalone binary.  Three parameters are passed in via the environment:
 - a block number
 - an RPC endpoint for the L2 node
 - a proof parameters file
@@ -48,7 +44,7 @@ The original `prover_cmd` binary (whose main function is [here](https://github.c
 The basic outline of what we need to do is to serialize a witness, in conjunction with a live L1/L2 node setup.  Once we have that, then we can adapt the prover to use that file, eliminating the need for an online connection.
 
 
-The changes we have made in this executable may be summarized here:
+The changes we have made may be summarized here:
 - introduce a prover mode enum parameter to enable different behaviors:
   - witness capture: with a block number and RPC url, grab the witness and serialize it to a file
   - offline prover: given  a witness and proof params file, generate a proof and write it to disk
@@ -61,7 +57,7 @@ The changes we have made in this executable may be summarized here:
 
 In order to do any kind of proving, we will first need a 512MiB proof parameters file. The way the examples are set up here, we expect to find it in the `gevulot` folder
 
-While at the root of the `zkevm-chain` package, run this:
+While the `zkevm-chain` folder, run this:
 
 ```
 wget -P ./gevulot https://storage.googleapis.com/zkevm-circuits-keys/kzg_bn254_22.srs
@@ -69,7 +65,7 @@ wget -P ./gevulot https://storage.googleapis.com/zkevm-circuits-keys/kzg_bn254_2
 
 ### 3.1 Witness capture
 
-The data here is gathered from querying the node for blocks, block transactions, and code.  These are the specific calls that get made:
+A circuit witness forms the basis of what gets proven in this protocol. The specific data here are gathered from querying the RPC node for blocks, block transactions, and code.  These are some of the specific calls that get made:
 
 ```
 eth_getBlockByNumber
@@ -79,7 +75,7 @@ eth_getCode
 eth_getProof
 ```
 
-The first step was to add Serialize and Deserialize traits to  the `CircuitWitness`.  This necessitated adding serialization to the component structs in the `zkevm-circuits` packages.  We have forked that, here in this repository next to `zkevm-chain`.  The prover `Cargo.toml` file links to that library.
+The first step in getting this to work was to add `Serialize` and `Deserialize` traits to  the `CircuitWitness`.  This necessitated adding serialization to the component structs in the `zkevm-circuits` package as well.  We have forked that, here in repository next to `zkevm-chain`.  The prover `Cargo.toml` file links to that library.
 
 The code that serializes the witness, writing it out is here: 
 https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L667-L671
@@ -97,7 +93,6 @@ If you have access to a Katla L2 node RPC endpoint, you can go ahead and create 
 ```
 ./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547 -w witness.json
 ```
-
 
 
 ### 3.2 Offline prover
@@ -209,8 +204,8 @@ The call to `gevulot_compile` is made from the `local_compile_solidity` function
 
 Another problem we found was with the default behavior of the `gen_verifier` function.
 
-That happened here, where a solidity script gets written out under the name of `aggregation_plonk.sol` 
-https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-circuits/circuit-benchmarks/src/taiko_super_circuit.rs#L93
+That happened [here](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-circuits/circuit-benchmarks/src/taiko_super_circuit.rs#L93), where a solidity script gets written out under the name of `aggregation_plonk.sol` 
+
 
 If we comment that line in (and again, adjust the imports at line 23), we'll get the following error when running the prover:
 ```
@@ -218,23 +213,37 @@ thread 'tokio-runtime-worker' panicked at /home/ader/dev/gev/taiko-demo/zkevm-ci
 called `Result::unwrap()` on an `Err` value: Os { code: 28, kind: StorageFull, message: "No space left on device" }
 ```
 
-File writing may only be done to specic paths, which will be covered later.
+File writing may only be done to specifi paths, which will be covered later.
 
 
 ## 5. Creating the prover and verifier images
 
-We have added three binary executables to the prover package
+### 5.1 Overview
 
-One for the prover: [taiko_prover.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_prover.rs)
-One for the verifier: [taiko_verifier.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_verifier.rs)
-One for a mock prover: [taiko_mock.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_mock.rs)
+The runtime environment in which the provers run have very specfic structure for main() and the run tasks.
+
+The signature of main [here in the mock prover](), looks like this
+
+```
+fn main() -> Result<(), Box<dyn Error>>
+```
+
+We have added three binary executables to the prover package
+- [a prover](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_prover.rs)
+- [a verifier](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_verifier.rs)
+- [a mock prover](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_mock.rs)
+
+We link also to the `gevulot_shim` library.
+
 
 Build them
 ```
 cargo build --release
 ```
 
-## 5.1 Build the binaries
+### 5.2 Build the images
+
+An ops images is created from a binary and a manifest, which may also include other static files.  In this use case, our 512MiB parameters file is part of the package.
 
 ```
 ops build ./target/release/taiko_prover -n -c ./gevulot/manifest_prover.json && \
@@ -242,13 +251,13 @@ ops build ./target/release/taiko_verifier -n -c ./gevulot/manifest_verifier.json
 ops build ./target/release/taiko_mock -n -c ./gevulot/manifest_mock.json
 ```
 
-We are now ready to run the images on Gevulot.
+We are now ready to run the images on Gevulot!
 
 ## 6. Executing the prover on Gevulot
 
 ### 6.1 Prerequites
 
-Link to installation
+Here is the [Gevulot installation guide](https://github.com/gevulotnetwork/gevulot/blob/main/INSTALL.md).
 
 Obtain the local key and node key.  These 
 
@@ -278,7 +287,7 @@ While testing, it is often a good idea to start with a clean database.  Perform 
 
 ```
 cd crates/node
-cargo sqlx database drop --database-url postgres://gevulot:gevulot@localhost/gevulot
+cargo sqlx database drop --database-url postgres://gevulot:gevulot@localhost/gevulot  (type `y` to confirm)
 cargo sqlx database create --database-url postgres://gevulot:gevulot@localhost/gevulot
 cargo sqlx migrate run --database-url postgres://gevulot:gevulot@localhost/gevulot
 ```
@@ -325,8 +334,20 @@ Verifier hash:62ed37dfff36e7a5fd335b4d4fc3b3c27a2c624c5a1034efbf15ee11384b1d10.
 Tx Hash:fbb7df66a50610c89e2fbb70684e89a881d332db599080db6a1650022b5268ad
 ```
 
+You'll need to save off the prover and verifier hashes in order to execute them.
+
 ### 6.3 Task execution
 
+This is a call to execute the prover.
+
+```
+$ ./target/debug/gevulot-cli exec --tasks '[{"program":"bcaf4dcc5408f9fa1eadbe80163c1bd0e20e41ce2407ee1601b61bfa4cff3112","cmd_args":[{"name":"-k","value":"kzg_bn254_22.srs"}, {"name":"-p","value":"/workspace/proof.json"}, {"name":"-w","value":"/workspace/witness-57437.json"}],"inputs":[{"Input":{"file":"witness-mock.json"}}]},{"program":"62ed37dfff36e7a5fd335b4d4fc3b3c27a2c624c5a1034efbf15ee11384b1d10","cmd_args":[{"name":"-p","value":"/workspace/proof.json"}],"inputs":[{"Output":{"source_program":"bcaf4dcc5408f9fa1eadbe80163c1bd0e20e41ce2407ee1601b61bfa4cff3112","file_name":"/workspace/proof.json"}}]}]'
+```
+
+There are a few things to note here:
+- our parameter file (kzg_bn254_22.srs) will be found in the image
+- the proof file gets written to the `/workspace` folder
+- the inputs to the verifier are based on the output from the prover, our proof file.
 
 
 
