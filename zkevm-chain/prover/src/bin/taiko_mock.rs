@@ -7,7 +7,7 @@ use std::io;
 use std::{error::Error, result::Result};
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("main()");
+    println!("taiko_mock main()");
     gevulot_shim::run(run_task)
 }
 
