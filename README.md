@@ -6,35 +6,30 @@
 
 In this document, we will show how to adapt an existing prover so that it may be deployed on a Gevulot node.  To illustate the steps involved, we will use the Taiko zkevm prover currently used on the Katla testnet (alpha 6).  This repository contains forks of their `zkevm-chain` and `zkevm-circuits` packages.
 
-
 Taiko uses a Halo2-based prover for its L2 rollups.
 
 The goal of this document is to take you through all the steps to get this prover executing in Gevulot.
 
 - we describe how create a witness required for the prover
-- how we created standalone prover and verifier binaries.
+- how we created standalone prover and verifier binaries
 - how we adapt the binraries to run in the Gevulot environment
-- furthermore, it's a nice juicy prover tasks:  it takes about 6 minutes to run, using 22 cores and 17 GB of memory
+- furthermore, it's a nice juicy prover task:  it takes about 6 minutes to run, using 22 cores and 17 GB of memory
 - we can examine the proofs written to the L1 node, which is Holesky in this case
 
+This tutorial is meant to be run from the `zkevm-chain` folder.
 
+```
+cd zkevm-chain
+```
 
 ## 2. The Prover
 
-- Description of the Taiko prover
 
-The Taito prover reside in this repository:
+The Taito prover resides in this repository: https://github.com/taikoxyz/zkevm-chain
 
-As currently, alph6 is running on their Katla testnet, we have used  the `v0.6.0-alpha` branch, and for illustration this particular commit:
+Currently, they are running their Katla testnet (Alpha 6).  Therefore, we have used  the `v0.6.0-alpha` branch, and for illustration purposes this particular commit:
 
-
-https://github.com/taikoxyz/zkevm-chain/tree/275eec0097400241ab71963f6c1a192019d219cb
-
-point to various places in the code to illustrate
-- how the environment args are parsed in prover_cmd
-- what line of code creates the witnes
-- where the proof is generated, with a bit of stack
-- where the verifier is called
+- https://github.com/taikoxyz/zkevm-chain/tree/275eec0097400241ab71963f6c1a192019d219cb
 
 
 There are 3 main parts to this coding process
@@ -43,7 +38,7 @@ There are 3 main parts to this coding process
 3. Package these both as Nanos unikernel images.
 
 
-## 3 Adapt `prover_cmd`.
+## 3 Adapt `prover_cmd`
 
 The original `prover_cmd` binary (whose main function is [here](https://github.com/taikoxyz/zkevm-chain/blob/v0.6.0-alpha/prover/src/bin/prover_cmd.rs#L12)) is a convenient point of entry for us into the Taiko prover.  While the Taiko provers are normally instantiated vai RPC requests, the functionality is more or less exposed here in a standalone executable.  Three parameters are passed in via the environment:
 - a block number
@@ -64,7 +59,7 @@ The changes we have made in this executable may be summarized here:
 
 #### Download the proof parameters file
 
-In order to do any kind of proving, you will first need a 512MiB proof parameters file. The way the examples are set up here, we expect to find it in the `./zkevm-chain/gevulot` folder
+In order to do any kind of proving, you will first need a 512MiB proof parameters file. The way the examples are set up here, we expect to find it in the `gevulot` folder
 
 While at the root of the `zkevm-chain` package, run this:
 
@@ -107,12 +102,20 @@ We will use the prover_cmd.
 We have to add the Deserialize and Serialize traits for the 
 
 #### Write it out
+In order to capture a witness, the arguments are: 
+- `-b` :  block number
+- `-k` :  proof parameters files: `gevulot/kzg_bn254_22.srs`
+- `-r` :  RPC endpoint, e.g. `http://35.205.130.127:8547`
+- `-w` :  output witness file
+- 
 
 
 ### 3.2 Offline prover
 
 The arguments are...
-- `-k` :  ...
+- `-k` :  proof parameters files: `gevulot/kzg_bn254_22.srs`
+- `-w` :  input witness file
+- `-p` :  output proof file
 
 
 We have exposed the legacy prover, as well as a verifier
@@ -124,29 +127,76 @@ In order to capture a witness, pass in:
 - parameters file path, usually kzg_bn254_22.srs
 - an RPC endpoint.  This is the L2 Katla node that you are running.
 - 
-./target/release/prover_cmd witness_capture -k kzg_bn254_22.srs -w witness-57437.json
-./target/release/prover_cmd offline_prover -k kzg_bn254_22.srs -w witness-57437.json  -p proof.json
-./target/release/prover_cmd legacy_prover -b 57437 -k kzg_bn254_22.srs -r http://35.195.113.51:8547 -p proof-legacy-57437.json
-./target/release/prover_cmd verifier -k -p proof.json
 
+### 3.3 Summary
 
-### 3.3 `prover_cmd` with nanos.
+The four modes of `prover_cmd` are illustrates with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.
+
+```
+./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -w witness-57437.json
+./target/release/prover_cmd offline_prover -k gevulot/kzg_bn254_22.srs -w witness-57437.json  -p proof.json
+./target/release/prover_cmd legacy_prover -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547  -p proof-legacy-57437.json
+./target/release/prover_cmd verifier -p proof.json
+```
+
 
 ## 4. Constraints
 
-There are a few things to bear in mind when building or adapting a prover for use with Gevulot
+Now that we have a binary that can run with four different actions, we can try to run them as an Nanos unikernel.  This section deals with some constraints  to bear in mind when building or adapting a prover for use with Gevulot
 - you may not fork another process
 - you might not have permission for writing to the root directory
 - you do not have access to the network
 
-Additionally, the shim require the use of a non-async main() function.  Any async calls must be adapted or rewritten. This will be covered in the section on creating unikernel images.
+Additionally, our shim require the use of a non-async main() function.  Any async calls must be adapted or rewritten. This will be covered in the section on creating unikernel images.
+
+
+### 4.1 Run `prover_cmd` as a unikernal
+
+First, we now need to know how to run a binary as a unikernel.  
+
+If `ops` is not yet installed, do it now
+
+```
+sudo apt-get install qemu-kvm qemu-utils
+```
+
+Next, set up a volume.
+
+```
+mkdir ops_deploy
+ops volume create taiko_deploy -n -s 2g -d ops_deploy
+```
+
+You may now run unikernel images.  For example, run the verifier.  The arguments to `prover_cmd` have been set in the manifest file.
+
+```
+ops run ./target/release/prover_cmd -n -c gevulot/taiko-ops-verifier.json --mounts taiko_deploy:/ops_deploy
+```
+You should see an `Ok` in the last two lines
+```
+deploy code size: 21884 bytes, instances size: [1][18], calldata: 4384
+gevulot_evm_verify result: Ok(604658)
+```
+
+We have set up another manifest that points to a 'bad` proof, namely, a proof file where one random byte has been altered.  This will return an error.
+
+```
+ops run ./target/release/prover_cmd -n -c gevulot/taiko-ops-verifier-fail.json --mounts taiko_deploy:/ops_deploy
+```
+
 
 
 ### 4.1 No forked processes
 
 As part of running the original Taiko prover, a Solidity script must be compiled.   In the commented out line [here](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L357-L358), a call the the solidity compiler executable `solc` happens on [this line](https://github.com/taikoxyz/snark-verifier/blob/main/snark-verifier/src/loader/evm/util.rs#L105).
 
-When we comment that line in, as well as the import statement on lin 25 of shared_state.rs, and run the offline prover as we just have, we will get an error that looks like this:
+First, try running the offline prover via ops.  Running on a 32GB system if prefered, although we have run it on a 16GB laptop with 32GB of swap space.  It will write out the file `proof.json` to `zkevm-chain`, taking six minutes (or longer) to run.
+
+```
+ops run ./target/release/prover_cmd -n -c gevulot/taiko-ops-offline-prover.json --mounts taiko_deploy:/ops_deploy --smp 16
+```
+
+When we comment that line in, as well as the import statement on line 25 of shared_state.rs, rebuild and run the offline prover as we just have, we will get an error that looks like this:
 
 ```
 thread 'tokio-runtime-worker' panicked at /home/ader/.cargo/git/checkouts/snark-verifier-79f3a4e94e319a00/612f495/snark-verifier/src/loader/evm/util.rs:118:13:
@@ -181,23 +231,18 @@ called `Result::unwrap()` on an `Err` value: Os { code: 28, kind: StorageFull, m
 
 File writing may only be done to specic paths, which will be covered later.
 
-### 4.3 No networking
-
-
-
-
 
 ## 5. Creating the prover and verifier images
 
-We have added two binary executables to the prover package
+We have added three binary executables to the prover package
 
-One for the prover: `<link to main() in taiko_prover.rs>
-One for the verifier: `<link to main() in taiko_verifier.rs>
+One for the prover: [taiko_prover.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_prover.rs)
+One for the verifier: [taiko_verifier.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_verifier.rs)
+One for a mock prover: [taiko_mock.rs](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/bin/taiko_mock.rs)
 
 
 ## 5.1 Build the binaries
 
-define the API
 
 ## 5.2 Run them as ops images
 

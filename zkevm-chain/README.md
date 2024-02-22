@@ -32,24 +32,10 @@ There are four prover modes:
 
 Required is a 512MiB proof parameters file, kzg_bn254_22.srs.
 
-That may be gotten thusly:
+That may be gotten thusly and written into the `gevulot` folder, if not already there.
 
 ```
-wget https://storage.googleapis.com/zkevm-circuits-keys/kzg_bn254_22.srs <dest>
-```
-
-### Solidity compiler
-
-`solc` must be in the path.
-It can be built from the sources in this repository:  https://github.com/ethereum/solidity
-
-I used this line for the cmake call:  
-```
-make .. -DUSE_Z3=OFF`
-```
-On our cloud server, I copied it into a path folder.
-```
-sudo cp solc /usr/local/bin
+wget -P gevulot https://storage.googleapis.com/zkevm-circuits-keys/kzg_bn254_22.srs
 ```
 
 ## `witness_capture`
@@ -64,21 +50,21 @@ Required parameters:
 ### Example: create a witness for block 57437
 
 ```
-./prover_cmd witness_capture -b 57437 -k kzg_bn254_22.srs -r http://35.195.113.51:8547 -w witness.json
+./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.195.113.51:8547 -w witness.json
 ```
 
 
 ## `offline_prover`
 
 Required parameters:
-- `-k`: parameters file with k value of 22. This should be kzg_bn254_22.srs.
+- `-k`: parameters file with k value of 22. This should point to kzg_bn254_22.srs.
 - `-p`: proof output file
 - `-w`: witness input file
 
 ### Example: create a proof from a witness
 
 ```
-./prover_cmd offline_prover -k kzg_bn254_22.srs -w witness.json -p proof.json
+./target/release/prover_cmd offline_prover -k kzg_bn254_22.srs -w witness.json -p proof.json
 ```
 
 
@@ -91,14 +77,14 @@ A witness is created with a connection to an L2 node, followed by the generation
 
 Required parameters:
 - `-b`: a block number
-- `-k`: parameters file with k value of 22.  This should be kzg_bn254_22.srs.
+- `-k`: proof parameters, gevulot/kzg_bn254_22.srs
 - `-p`: proof output file
 - `-r`: an RPC url for the L2 Katla node
 
 ### Example
 
 ```
-./prover_cmd legacy_prover -b 57437 -k kzg_bn254_22.srs -r http://35.195.113.51:8547 -p proof.json
+./target/release/prover_cmd legacy_prover -b 57437 -k kzg_bn254_22.srs -r http://35.195.113.51:8547 -p proof.json
 ```
 
 ## `verifier`
@@ -111,9 +97,20 @@ This mode performs a verification: a proof is read in and verified, with the res
 ### Example
 
 ```
-./prover_cmd verfier -p proof.json
+./target/release/prover_cmd verfier -p proof.json
 ```
 
 Required parameters:
 - `-p`: proof input file
+
+
+## `taiko_prover`, `taiko_mock`, `taiko_verifier`
+
+To build these unikernel images, run the following command.  The required manifests may be found in the `gevulot` folder.
+
+```
+ops build ./target/release/taiko_prover -n -c ./gevulot/manifest_prover.json && \
+ops build ./target/release/taiko_verifier -n -c ./gevulot/manifest_verifier.json && \
+ops build ./target/release/taiko_mock -n -c ./gevulot/manifest_mock.json
+```
 
