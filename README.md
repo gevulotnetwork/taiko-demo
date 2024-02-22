@@ -1,13 +1,13 @@
-# Taiko's zkevm: a sample prover for Gevulot
+# Adapting the Taiko zkevm prover for Gevulot
 
 
 ## 1. Overview
 
-In this tutorial (or use case study), we will show how to adapt an existing prover so that it may be deployed on a Gevulot node.  To illustate the steps involved, we will use the Taiko zkevm prover currently used on the Katla testnet (alpha 6).  This repository contains forks of their `zkevm-chain` and `zkevm-circuits` packages.
+In this tutorial (or case study), we will show how to adapt an existing prover so that it may be deployed on a Gevulot node.  To illustate the steps involved, we will use the Taiko zkevm prover currently used on the Katla testnet (alpha 6).  This repository contains forks of their `zkevm-chain` and `zkevm-circuits` packages.
 
 Taiko uses a Halo2-based prover for its L2 rollups.
 
-Our goalW is to take you through all the steps to get this prover executing in Gevulot.
+Our goal is to take you through all the steps to get this prover executing in Gevulot.
 
 - we describe how to create a witness required for the prover
 - how we created standalone prover and verifier binaries
@@ -21,7 +21,7 @@ This tutorial is meant to be run from the `zkevm-chain` folder.  The repository 
 
 The Taito prover resides in this repository: https://github.com/taikoxyz/zkevm-chain
 
-Currently, Taiko are running their Katla testnet (Alpha 6).  Therefore, we have used  the `v0.6.0-alpha` branch.  For illustration purposes this particular commit:
+Currently, Taiko are running their Katla testnet (Alpha 6).  Therefore, we have used  the `v0.6.0-alpha` branch.  For illustration purposes, this particular commit:
 
 - https://github.com/taikoxyz/zkevm-chain/tree/275eec0097400241ab71963f6c1a192019d219cb
 
@@ -339,14 +339,14 @@ You'll need to save off the prover and verifier hashes in order to execute them.
 
 ### 6.3 Task execution
 
-This is a call to execute the prover.
+This example shows how to execute the prover.
 
 ```
 $ ./target/debug/gevulot-cli exec --tasks '[{"program":"bcaf4dcc5408f9fa1eadbe80163c1bd0e20e41ce2407ee1601b61bfa4cff3112","cmd_args":[{"name":"-k","value":"kzg_bn254_22.srs"}, {"name":"-p","value":"/workspace/proof.json"}, {"name":"-w","value":"/workspace/witness-57437.json"}],"inputs":[{"Input":{"file":"witness-mock.json"}}]},{"program":"62ed37dfff36e7a5fd335b4d4fc3b3c27a2c624c5a1034efbf15ee11384b1d10","cmd_args":[{"name":"-p","value":"/workspace/proof.json"}],"inputs":[{"Output":{"source_program":"bcaf4dcc5408f9fa1eadbe80163c1bd0e20e41ce2407ee1601b61bfa4cff3112","file_name":"/workspace/proof.json"}}]}]'
 ```
 
 There are a few things to note here:
-- our parameter file (kzg_bn254_22.srs) will be found in the image
+- our parameter file (`kzg_bn254_22.srs`) will be found in the image
 - the proof file gets written to the `/workspace` folder
 - the inputs to the verifier are based on the output from the prover, our proof file.
 
