@@ -1,37 +1,35 @@
-# Taiko ZKEVM: a sample prover for Gevulot
+# Taiko's zkevm: a sample prover for Gevulot
 
 
 ## 1. Overview
 
-In this document, we will show how to adapt an existing prover so that it may be deployed on a Gevulot node.  To illustate the steps involved, we will use the Taiko zkevm prover currently used on the Katla testnet (alpha 6).  This repository contains forks of their `zkevm-chain` and `zkevm-circuits` packages.
+In this tutorial (or use case study), we will show how to adapt an existing prover so that it may be deployed on a Gevulot node.  To illustate the steps involved, we will use the Taiko zkevm prover currently used on the Katla testnet (alpha 6).  This repository contains forks of their `zkevm-chain` and `zkevm-circuits` packages.
 
 Taiko uses a Halo2-based prover for its L2 rollups.
 
-The goal of this document is to take you through all the steps to get this prover executing in Gevulot.
+Our goalW is to take you through all the steps to get this prover executing in Gevulot.
 
-- we describe how create a witness required for the prover
+- we describe how to create a witness required for the prover
 - how we created standalone prover and verifier binaries
-- how we adapt the binraries to run in the Gevulot environment
-- furthermore, it's a nice juicy prover task:  it takes about 6 minutes to run, using 22 cores and 17 GB of memory
-- we can examine the proofs written to the L1 node, which is Holesky in this case
+- how we adapted the binaries to run in the Gevulot environment
 
 This tutorial is meant to be run from the `zkevm-chain` folder.
-W
+
 
 ## 2. The Prover
 
 
 The Taito prover resides in this repository: https://github.com/taikoxyz/zkevm-chain
 
-Currently, they are running their Katla testnet (Alpha 6).  Therefore, we have used  the `v0.6.0-alpha` branch, and for illustration purposes this particular commit:
+Currently, Taiko are running their Katla testnet (Alpha 6).  Therefore, we have used  the `v0.6.0-alpha` branch.  For illustration purposes this particular commit:
 
 - https://github.com/taikoxyz/zkevm-chain/tree/275eec0097400241ab71963f6c1a192019d219cb
 
 
-There are 3 main parts to this coding process
+There are three phases to this the code changes we have to do:
 1. Adapt the `prover_cmd` binary to support witness capture, offline proving and verification
 2. Create a new binary for the prover which we will package, as well as one for the verifier
-3. Package these both as Nanos unikernel images.
+3. Package the binaries as Nanos unikernel images.
 
 
 ## 3 Adapt `prover_cmd`
@@ -115,7 +113,11 @@ See the next section for running the verifier and legacy prover.
 
 ### 3.3 Summary
 
-The four modes of `prover_cmd` are illustrates with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.
+We have exposed a verifier mode, which is normally not done separately by prover_cmd, but rather at the end of the proof generation. We have encapsulated that code for our verifier.
+
+Additionally, we added support for the legacy prover, which uses a live RPC connection to generate the witness and then directly generate the proof. Of course here, we use command line arguments, instead of environment variables used in the original version.
+
+The four modes of `prover_cmd` are illustrated with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.  They should all work as written.
 
 ```
 ./target/release/prover_cmd witness_capture -b 57437 -k gevulot/kzg_bn254_22.srs -r http://35.205.130.127:8547 -w witness.json
@@ -170,7 +172,7 @@ ops run ./target/release/prover_cmd -n -c gevulot/taiko-ops-verifier-fail.json -
 
 
 
-### 4.1 No forked processes
+### 4.2 No forked processes
 
 As part of running the original Taiko prover, a Solidity script must be compiled.   In the commented out line [here](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/src/shared_state.rs#L357-L358), a call the the solidity compiler executable `solc` happens on [this line](https://github.com/taikoxyz/snark-verifier/blob/main/snark-verifier/src/loader/evm/util.rs#L105).
 
@@ -200,7 +202,7 @@ We have included the required static libraries as part of this package.  You may
 
 The call to `gevulot_compile` is made from the `local_compile_solidity` function.
 
-### 4.2 Do not write to `./`
+### 4.3 Do not write to `./`
 
 Another problem we found was with the default behavior of the `gen_verifier` function.
 
