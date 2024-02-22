@@ -1,8 +1,8 @@
 {
   "RebootOnExit": true,
   "RunConfig": {
-    "CPUs": 20,
-    "Memory": "24g"
+    "CPUs": 2,
+    "Memory": "2g"
   },
   "ManifestPassthrough": {
     "readonly_rootfs": "true"
