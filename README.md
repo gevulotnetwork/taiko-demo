@@ -260,8 +260,6 @@ We are now ready to run the images on Gevulot!
 
 Here is the [Gevulot installation guide](https://github.com/gevulotnetwork/gevulot/blob/main/INSTALL.md).
 
-Obtain the local key and node key.  These 
-
 You will need to obtain two keys for whitelisting later, namely, the local key and the node node.
 To display them, you will use the `gevulot show` command.  
 
@@ -293,7 +291,17 @@ cargo sqlx database create --database-url postgres://gevulot:gevulot@localhost/g
 cargo sqlx migrate run --database-url postgres://gevulot:gevulot@localhost/gevulot
 ```
 
-#### 6.2.3 Launch the node
+#### 6.2.3 Whitelist your keys
+
+Following a database initialization, you must whitelist your keys. Those strings were obtained with the `show` command above.
+
+```
+./target/debug/gevulot peer 04715a75faf7407de5a627a8cafb325e8abe146dfe4a1255... whitelist
+./target/debug/gevulot peer 042bd568e378a3b71a97e867f82131b849fdfa271f0fc623... whitelist
+```
+
+
+#### 6.2.4 Launch the node
 
 This is a possible command to launch the node.  Here, I've specified
 - the debug executable
