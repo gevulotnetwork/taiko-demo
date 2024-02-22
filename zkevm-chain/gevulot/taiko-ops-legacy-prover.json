@@ -1,5 +1,7 @@
 {
-    "RebootOnExit": true,
+    "RebootOnExit": true,      "-k",
+    "gevulot/kzg_bn254_22.srs",
+
     "RunConfig": {
       "CPUs": 1,
       "Memory": "8g"
@@ -15,7 +17,7 @@
       "-k",
       "/gevulot/kzg_bn254_22.srs",
       "-r",
-      "http://35.195.113.51:8547"],
+      "http://35.205.130.127:8547"],
     "Program":"./target/release/prover_cmd"
   }
   
