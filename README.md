@@ -13,7 +13,7 @@ Our goal is to take you through all the steps to get this prover executing in Ge
 - how we created standalone prover and verifier binaries
 - how we adapted the binaries to run in the Gevulot environment
 
-This tutorial is meant to be run from the `zkevm-chain` folder.  The `taiko-demo` repository itself, should be installed in the same folder (parallel to) as the [Gevulot](https://github.com/gevulotnetwork/gevulot) repository (for linking to the `gevulot_shim` library).
+This tutorial is meant to be run from the `zkevm-chain` folder.  The `taiko-demo` repository itself, should be installed in the same folder (parallel to) as the [`gevulot`](https://github.com/gevulotnetwork/gevulot) repository (for linking to the `gevulot_shim` library).
 
 
 ## 2. The Prover
