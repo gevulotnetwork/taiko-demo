@@ -1,4 +1,6 @@
+use std::env;
 use std::env::var;
+use std::path::Path;
 use std::process::Command;
 
 fn run(cmd: &str, args: Vec<&str>) -> String {
@@ -63,7 +65,10 @@ fn main() {
     println!("cargo:rustc-link-lib=static=stdc++");
     println!("cargo:rustc-link-lib=static=gcc");
     println!("cargo:rustc-link-lib=static=boost_filesystem");
-    println!("cargo:rustc-link-search=native=/usr/lib/gcc/x86_64-linux-gnu/11");
-    println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
-    println!("cargo:rustc-link-search=/home/ader/dev/eiger/gev/kyle-zkevm-chain/lib");
+    println!("cargo:rustc-link-search=native=/usr/lib/gcc/x86_64-linux-gnu/13");
+    let dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    println!(
+        "cargo:rustc-link-search=native={}",
+        Path::new(&dir).join("../lib").display()
+    );
 }
