@@ -62,7 +62,7 @@ Note: you may have to [edit the search path used](https://github.com/gevulotnetw
 println!("cargo:rustc-link-search=native=/usr/lib/gcc/x86_64-linux-gnu/13");
 ```
 
-When that's set up, then go ahead and build.
+When that is set up, go ahead and build.
 
 ```
 zkevm-chain$ cargo build --release
