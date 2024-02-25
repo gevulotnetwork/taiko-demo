@@ -66,6 +66,7 @@ fn main() {
     println!("cargo:rustc-link-lib=static=gcc");
     println!("cargo:rustc-link-lib=static=boost_filesystem");
     println!("cargo:rustc-link-search=native=/usr/lib/gcc/x86_64-linux-gnu/13");
+    // this is for sending a relative path to the linker library search.
     let dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     println!(
         "cargo:rustc-link-search=native={}",
