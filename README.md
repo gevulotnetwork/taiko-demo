@@ -34,6 +34,8 @@ There are three phases to this the code changes we have to do:
 
 ## 3 Adapt `prover_cmd`
 
+### 3.1 General
+
 The original `prover_cmd` binary (whose main function is [here](https://github.com/taikoxyz/zkevm-chain/blob/v0.6.0-alpha/prover/src/bin/prover_cmd.rs#L12)) is a convenient point of entry for us into the Taiko prover.  While the Taiko provers are normally instantiated via RPC requests, the functionality is also exposed here as a standalone binary.  Three parameters are passed in via the environment:
 - a block number
 - an RPC endpoint for the L2 node
@@ -50,8 +52,25 @@ The changes we have made may be summarized here:
   - verifier: take a proof and verify it
 - use command line arguments instead of environment variables
 
+### 3.2 Building
 
-#### Download the proof parameters file
+The prover links to the Solidity compiler, namely a set of C++ static libraries. The reason for this is covered below in section 4.2.  We have included all of the libraries required in the `./lib` directory, including a Boost library, `libboost_filesystem.a`.  
+
+Note: you may have to [edit the search path used](https://github.com/gevulotnetwork/taiko-demo/blob/main/zkevm-chain/prover/build.rs#L68) to find the `libstd++.a` static library for your particular Linux distribution and g++ version.  We have built and tested on Ubuntu 22.04 and gcc/g++ 13.1, using the following for a library search path.
+
+```
+println!("cargo:rustc-link-search=native=/usr/lib/gcc/x86_64-linux-gnu/13");
+```
+
+When that is set up, go ahead and build.
+
+```
+zkevm-chain$ cargo build --release
+```
+
+
+
+### 3.3 Download the proof parameters file
 
 In order to do any kind of proving, we will first need a 512MiB proof parameters file. The way the examples are set up here, we expect to find it in the `gevulot` folder
 
@@ -61,7 +80,7 @@ While the `zkevm-chain` folder, run this:
 wget -P ./gevulot https://storage.googleapis.com/zkevm-circuits-keys/kzg_bn254_22.srs
 ```
 
-### 3.1 Witness capture
+### 3.4 Witness capture
 
 A circuit witness forms the basis of what gets proven in this protocol. The specific data here are gathered from querying the RPC node for blocks, block transactions, and code.  These are some of the specific calls that get made:
 
@@ -92,7 +111,7 @@ If you have access to a Katla L2 node RPC endpoint, you can go ahead and create 
 ```
 
 
-### 3.2 Offline prover
+### 3.5 Offline prover
 
 The arguments are:
 - `-k` :  proof parameters file: `gevulot/kzg_bn254_22.srs`
@@ -108,13 +127,13 @@ Running it can take some time, depending on system resources.
 ```
 
 
-### 3.3 Verifier and legacy prover
+### 3.6 Verifier and legacy prover
 
 We have exposed a verifier mode, which is normally not done separately by `prover_cmd`, but rather at the end of the proof generation as a check.  We have encapsulated that code for our verifier.  There is also verification done on-chain, by the L1 node. 
 
 Additionally, we support the legacy prover, which uses a live RPC connection to generate the witness, being used directly to generate the proof. We use command line arguments here, instead of environment variables used in the original version.
 
-### 3.4 Summary
+### 3.7 Summary
 
 The four modes of `prover_cmd` are illustrated with the following calls.  The witness capture and legacy prover both require a live RPC Katla endpoint.  They should all work as written, given a valid connection.
 
