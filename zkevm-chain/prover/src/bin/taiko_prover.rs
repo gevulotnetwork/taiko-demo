@@ -3,7 +3,9 @@ use clap::Parser;
 use gevulot_shim::{Task, TaskResult};
 use prover::shared_state::SharedState;
 use serde_json::json;
+use std::fs;
 use std::fs::write;
+use std::io;
 use std::{error::Error, result::Result};
 use zkevm_common::prover::*;
 
@@ -49,6 +51,39 @@ pub struct TaikoProverConfig {
 // #[tokio::main]
 fn taiko_prover(args: &Vec<String>) -> Result<String, Box<dyn Error>> {
     let arg_conf = TaikoProverConfig::parse_from(args);
+
+    let entries = fs::read_dir(".")
+        .unwrap()
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()
+        .unwrap();
+
+    println!(
+        "taiko_prover file entries in root directory :: {:?}",
+        entries
+    );
+
+    let entries = fs::read_dir("/workspace")
+        .unwrap()
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()
+        .unwrap();
+
+    println!(
+        "taiko_prover file entries at directory /workspace :: {:?}",
+        entries
+    );
+
+    let entries = fs::read_dir("/gevulot")
+        .unwrap()
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()
+        .unwrap();
+
+    println!(
+        "taiko_prover file entries at directory /gevulot :: {:?}",
+        entries
+    );
 
     // set our arguments, use defaults as applicable
     let params_path = arg_conf.kparams_path;

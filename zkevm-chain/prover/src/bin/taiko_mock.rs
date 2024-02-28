@@ -64,6 +64,14 @@ fn prover_mock(args: &Vec<String>) -> Result<String, Box<dyn Error>> {
 
     println!("file entries at directory /workspace :: {:?}", entries);
 
+    let entries = fs::read_dir("/gevulot")
+        .unwrap()
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()
+        .unwrap();
+
+    println!("file entries at directory /gevulot :: {:?}", entries);
+
     // set our arguments, use defaults as applicable
     let params_path = arg_conf.kparams_path;
     let proof_path = arg_conf.proof_path;
