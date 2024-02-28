@@ -667,7 +667,7 @@ impl SharedState {
                 if prover_mode == ProverMode::WitnessCapture {
                     let jwitness = json!(witness).to_string();
                     write(task_options_copy.witness_path.clone().unwrap(), jwitness).unwrap();
-                    exit(1);
+                    exit(0);
                 }
 
                 let (config, circuit_proof, aggregation_proof, bytecode) = crate::match_circuit_params!(
@@ -719,7 +719,7 @@ impl SharedState {
                     let jproof = json!(res).to_string();
                     write(task_options_copy.proof_path.clone().unwrap(), jproof).unwrap();
                     println!("created proof, is now written to {:?}", task_options_copy.proof_path.unwrap());
-                    exit(1);
+                    exit(0);
                 }
 
                 Ok(res)
