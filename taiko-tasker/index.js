@@ -6,11 +6,7 @@ const AWS = require('aws-sdk')
 const fs = require('fs')
 
 
-var url = 'http://35.195.113.51:8545';
-var customHttpProvider = new ethers.JsonRpcProvider(url);
-// customHttpProvider.getBlockNumber().then((result) => {
-//     console.log("Current block number: " + result);
-// });
+var customHttpProvider = new ethers.JsonRpcProvider(process.env.KATLA_ENDPOINT);
 
 
 
@@ -48,17 +44,17 @@ async function uploadFile(srcName, dstName) {
 
 async function callProverCmdCapture(blockNumber) {
     console.log('callProverCmdCapture ', blockNumber)
-    let cmd = `${process.env.PROVER_CMD_PATH} witness_capture -b ${blockNumber} -k ${process.env.PARAMS_PATH} -r ${process.env.KATLA_ENDPOINT} -w witnesses/${blockNumber}.json`
+    let cmd = `${process.env.PROVER_CMD_PATH} witness_capture -b ${blockNumber} -k ${process.env.PARAMS_PATH} -r ${process.env.KATLA_ENDPOINT} -w witnesses/witness-${blockNumber}.json`
     console.log('  cmd: ', cmd);
 
-  const { stdout, stderr } = await exec(cmd);
-  console.log('  stdout:', stdout);
-  console.log('  stderr:', stderr);
+    const { stdout, stderr } = await exec(cmd);
+    console.log('  stdout:', stdout);
+    console.log('  stderr:', stderr);
 }
 
 async function calculateChecksum(blockNumber) {
     console.log('callProverCmdCapture ', blockNumber)
-    let cmd = `${process.env.GEVULOT_CLI} calculate-hash --file witnesses/${blockNumber}.json`
+    let cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL}  calculate-hash --file witnesses/witness-${blockNumber}.json`
     console.log('  cmd: ', cmd);
 
     const { stdout, stderr } = await exec(cmd);
@@ -74,16 +70,16 @@ async function captureWitness(blockNumber) {
     await callProverCmdCapture(blockNumber)
     let witness_checksum = await calculateChecksum(blockNumber)
     console.log('  got checksum: ', witness_checksum);
-    let srcName = `witnesses/${blockNumber}.json`
-    let dstName = `witness-${blockNumber}.json`
-    let witness_url = await uploadFile(srcName, dstName);
-    return {witness_checksum, witness_url};
+    let witness_name = `witness-${blockNumber}.json`
+    let srcName = `witnesses/${witness_name}`
+    let witness_url = await uploadFile(srcName, witness_name);
+    return {witness_checksum, witness_name, witness_url};
 }
 
 
 
 
-async function executeProof(witness_checksum, witness_url, witness_name) {
+async function executeProof(witness_checksum, witness_name, witness_url) {
     console.log('executeProof ')
 
     let params = 
@@ -146,18 +142,68 @@ async function executeProof(witness_checksum, witness_url, witness_name) {
     return res[0];
 }
 
-async function doBlock(blockNumber) {
-    console.log("doBlock ", blockNumber)
-    let {witness_checksum, witness_url} = await captureWitness(blockNumber)
-    console.log(`--${witness_checksum}-- len ${witness_checksum.length}`)
-    let witness_name = `witness-${blockNumber}.json`
-    let txhash = await executeProof(witness_checksum, witness_url, witness_name);
+async function getVerifierResult(txhash) {
+    console.log('\n\n\ngetVerifierResult ', txhash)
+    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} print-tx-tree --hash ${txhash}`
+    console.log('  cmd: ', cmd);
+
+    var { stdout, stderr } = await exec(cmd);
+    console.log('stdout:', stdout);
+    console.log('stderr:', stderr);
+
+    let res = stdout.match(/(?<=Leaf: ).*$/gm);
+    console.log('res:', res);
+    let hash = res[0];
+    console.log('hash:', hash);
+
+
+
+    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} get-tx-execution-output --hash ${hash}  | jq -r '.[] | select(.kind == "Verification") | .data' | base64 -d`
+    // console.log('  cmd: ', cmd);
+
+    var { stdout, stderr } = await exec(cmd);
+    console.log('\n\nstdout:', stdout);
+    console.log('stderr:', stderr);
+
+    // let res = stdout.match(/(?<=: ).*$/gm);
+    // console.log('res:', res);
+    return stdout;
+}
+
+function getMockWitness() {
+    let witness_checksum = '7dacd2a082c5794642d0fba5c68e52e23f3fb423d6e74fe87e27652b5a34f260'
+    let witness_name = 'witness-mock.json'
+    let witness_url = `https://gevulot.eu-central-1.linodeobjects.com/witness-mock.json`
+    return {witness_checksum, witness_name, witness_url};
+}
+
+async function writeVerifierResult(verifier_result, filepath) {
+    let res = fs.writeFileSync(filepath, verifier_result);
 }
 
 
+
+async function doBlock(blockNumber) {
+    console.log("doBlock ", blockNumber)
+    let {witness_checksum, witness_name, witness_url} = await captureWitness(blockNumber)
+    // let {witness_checksum, witness_name, witness_url} = getMockWitness()
+    console.log(`--${witness_checksum}-- len ${witness_checksum.length}`)
+    let txhash = await executeProof(witness_checksum, witness_name, witness_url);
+    let verifier_result = getVerifierResult(txhash);
+    await writeVerifierResult(verifier_result, `results/result-${blockNumber}`);
+}
+
+async function getLatestBlockNumber() {
+    let res = await customHttpProvider.getBlockNumber();
+    return res;
+}
+
+
+
 async function doit() {
-    var startBlock = 57437;
-    await doBlock(startBlock)
+    let blockNumber = await getLatestBlockNumber()
+    console.log('blockNumber: ', blockNumber);
+    await doBlock(blockNumber)
 }
 
 
