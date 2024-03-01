@@ -129,9 +129,8 @@ async function executeProof(witness_checksum, witness_name, witness_url) {
         }
     ]
     let params_str = JSON.stringify(params);
-    console.log('params_str \n', params_str);
 
-    let cmd = `RUST_LOG=trace,gevulot=trace ${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL}  exec --tasks '${params_str}'`
+    let cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL}  exec --tasks '${params_str}'`
     console.log('  cmd: ', cmd);
 
     const { stdout, stderr } = await exec(cmd);
@@ -143,30 +142,11 @@ async function executeProof(witness_checksum, witness_name, witness_url) {
 }
 
 async function getVerifierResult(txhash) {
-    console.log('\n\n\ngetVerifierResult ', txhash)
-    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} print-tx-tree --hash ${txhash}`
-    console.log('  cmd: ', cmd);
+    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} get-tx-execution-output --hash ${txhash}  | jq -r '.[] | select(.kind == "Verification") | .data' | base64 -d`
 
     var { stdout, stderr } = await exec(cmd);
-    console.log('stdout:', stdout);
-    console.log('stderr:', stderr);
-
-    let res = stdout.match(/(?<=Leaf: ).*$/gm);
-    console.log('res:', res);
-    let hash = res[0];
-    console.log('hash:', hash);
-
-
-
-    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} get-tx-execution-output --hash ${hash}  | jq -r '.[] | select(.kind == "Verification") | .data' | base64 -d`
-    // console.log('  cmd: ', cmd);
-
-    var { stdout, stderr } = await exec(cmd);
-    console.log('\n\nstdout:', stdout);
-    console.log('stderr:', stderr);
-
-    // let res = stdout.match(/(?<=: ).*$/gm);
-    // console.log('res:', res);
+    // console.log('stdout:', stdout);
+    // console.log('stderr:', stderr);
     return stdout;
 }
 
@@ -182,6 +162,9 @@ async function writeVerifierResult(verifier_result, filepath) {
 }
 
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 async function doBlock(blockNumber) {
     console.log("doBlock ", blockNumber)
@@ -189,8 +172,24 @@ async function doBlock(blockNumber) {
     // let {witness_checksum, witness_name, witness_url} = getMockWitness()
     console.log(`--${witness_checksum}-- len ${witness_checksum.length}`)
     let txhash = await executeProof(witness_checksum, witness_name, witness_url);
-    let verifier_result = getVerifierResult(txhash);
-    await writeVerifierResult(verifier_result, `results/result-${blockNumber}`);
+    while (true) {
+        let verifier_result = await getVerifierResult(txhash);
+        if (verifier_result) {
+            console.log('we have verifier result: ', verifier_result)
+            if (verifier_result.length) {
+                console.log('verifier result length = ', verifier_result.length);
+                if (verifier_result[0] == '{') {
+                    let filepath = `results/result-${blockNumber}`;
+                    await writeVerifierResult(verifier_result, filepath);
+                    console.log('written to ', filepath);
+                    return;
+                }
+            }
+        } else {
+            console.log('wait 10 seconds ', Date.now())
+        }
+        await sleep(10 * 1000);
+    }
 }
 
 async function getLatestBlockNumber() {
@@ -201,9 +200,10 @@ async function getLatestBlockNumber() {
 
 
 async function doit() {
-    let blockNumber = await getLatestBlockNumber()
-    console.log('blockNumber: ', blockNumber);
-    await doBlock(blockNumber)
+    while (true) {
+        let blockNumber = await getLatestBlockNumber()
+        await doBlock(blockNumber)
+    }
 }
 
 
