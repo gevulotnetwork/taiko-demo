@@ -1,14 +1,9 @@
-
-
 var ethers = require('ethers');
 require('dotenv').config();
 const AWS = require('aws-sdk')
 const fs = require('fs')
 
-
 var customHttpProvider = new ethers.JsonRpcProvider(process.env.KATLA_ENDPOINT);
-
-
 
 var s3 = new AWS.S3({
     endpoint: 'https://eu-central-1.linodeobjects.com',
@@ -17,15 +12,9 @@ var s3 = new AWS.S3({
     sslEnabled: true,
   })
 
-
-
-
-
-
 const util = require('util');
 const { exit } = require('process');
 const exec = util.promisify(require('child_process').exec);
-
 
 async function uploadFile(srcName, dstName) {
     const fileContent = fs.readFileSync(srcName)
@@ -41,7 +30,6 @@ async function uploadFile(srcName, dstName) {
     console.log('res: ', res);
     return res.Location;
   }
-  
 
 async function callProverCmdCapture(blockNumber) {
     console.log('callProverCmdCapture ', blockNumber)
@@ -57,14 +45,12 @@ async function calculateChecksum(blockNumber) {
     console.log('callProverCmdCapture ', blockNumber)
     let cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL}  calculate-hash --file witnesses/witness-${blockNumber}.json`
     console.log('  cmd: ', cmd);
-
     const { stdout, stderr } = await exec(cmd);
     console.log('stdout:', stdout);
     let res = stdout.match(/(?<=: ).*$/gm);
     console.log('res:', res);
     return res[0];
 }
-
 
 async function captureWitness(blockNumber) {
     console.log("captureWitness ", blockNumber)
@@ -76,9 +62,6 @@ async function captureWitness(blockNumber) {
     let witness_url = await uploadFile(srcName, witness_name);
     return {witness_checksum, witness_name, witness_url};
 }
-
-
-
 
 async function executeProof(witness_checksum, witness_name, witness_url) {
     console.log('executeProof ')
