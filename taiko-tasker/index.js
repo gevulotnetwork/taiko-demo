@@ -23,6 +23,7 @@ var s3 = new AWS.S3({
 
 
 const util = require('util');
+const { exit } = require('process');
 const exec = util.promisify(require('child_process').exec);
 
 
@@ -172,21 +173,24 @@ async function doBlock(blockNumber) {
     // let {witness_checksum, witness_name, witness_url} = getMockWitness()
     console.log(`--${witness_checksum}-- len ${witness_checksum.length}`)
     let txhash = await executeProof(witness_checksum, witness_name, witness_url);
+    let start = Date.now()
     while (true) {
         let verifier_result = await getVerifierResult(txhash);
         if (verifier_result) {
-            console.log('we have verifier result: ', verifier_result)
-            if (verifier_result.length) {
-                console.log('verifier result length = ', verifier_result.length);
-                if (verifier_result[0] == '{') {
-                    let filepath = `results/result-${blockNumber}`;
-                    await writeVerifierResult(verifier_result, filepath);
-                    console.log('written to ', filepath);
-                    return;
-                }
+            console.log('got verifier result, length: ', verifier_result.length);
+            console.log(verifier_result)
+            if (verifier_result[0] == '{') {
+                let filepath = `results/result-${blockNumber}`;
+                await writeVerifierResult(verifier_result, filepath);
+                console.log('written to ', filepath);
+                return;
+            } else {
+                console.log('unexpected result, exiting');
+                exit();
             }
         } else {
-            console.log('wait 10 seconds ', Date.now())
+            let secs = Date.now() - start;
+            console.log(`wait 10 seconds ${secs/1000} sec`);
         }
         await sleep(10 * 1000);
     }
@@ -199,7 +203,7 @@ async function getLatestBlockNumber() {
 
 
 
-async function doit() {
+async function main() {
     while (true) {
         let blockNumber = await getLatestBlockNumber()
         await doBlock(blockNumber)
@@ -207,5 +211,5 @@ async function doit() {
 }
 
 
-doit()
+main()
 
