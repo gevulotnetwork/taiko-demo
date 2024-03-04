@@ -6,9 +6,9 @@ const fs = require('fs')
 var customHttpProvider = new ethers.JsonRpcProvider(process.env.KATLA_ENDPOINT);
 
 var s3 = new AWS.S3({
-    endpoint: 'https://eu-central-1.linodeobjects.com',
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
+    endpoint: process.env.S3_ENDPOINT,
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_KEY,
     sslEnabled: true,
   })
 
