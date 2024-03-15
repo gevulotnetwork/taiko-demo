@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     gevulot_shim::run(run_task)
 }
 
-fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
+fn run_task(task: Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
     // to synchronize argument parsing
