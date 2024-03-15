@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 // The main function that executes the prover program.
-fn run_task(task: &Task) -> Result<TaskResult, Box<dyn Error>> {
+fn run_task(task: Task) -> Result<TaskResult, Box<dyn Error>> {
     println!("run_task()");
 
     // to synchronize argument parsing
