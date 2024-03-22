@@ -136,7 +136,7 @@ async function getTxLeaf(txhash) {
     var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} print-tx-tree ${txhash}`
     var { stdout, stderr } = await exec(cmd);
     console.log('getTxLeaf stdout: ', stdout);
-    if (stdout.includes('Leaf')) {
+    if (stdout.indexOf('Leaf') > 0) {
         console.log("have Leaf");
         let res = stdout.match(/(?<=Leaf: ).*$/gm);
         console.log("res: ", res);
