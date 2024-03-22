@@ -3,6 +3,13 @@ require('dotenv').config();
 const AWS = require('aws-sdk')
 const fs = require('fs')
 
+var firstBlock = 440000;
+if (process.argv.length == 3) {
+    firstBlock = process.argv[2];
+}
+
+console.log('firstBlock is ', firstBlock);
+
 var customHttpProvider = new ethers.JsonRpcProvider(process.env.KATLA_ENDPOINT);
 
 var s3 = new AWS.S3({
@@ -42,7 +49,7 @@ async function callProverCmdCapture(blockNumber) {
 }
 
 async function calculateChecksum(blockNumber) {
-    console.log('callProverCmdCapture ', blockNumber)
+    console.log('calculateChecksum ', blockNumber)
     let cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL}  calculate-hash --file witnesses/witness-${blockNumber}.json`
     console.log('  cmd: ', cmd);
     const { stdout, stderr } = await exec(cmd);
@@ -125,12 +132,22 @@ async function executeProof(witness_checksum, witness_name, witness_url) {
     return res[0];
 }
 
+async function getTxLeaf(txhash) {
+    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} print-tx-tree ${txhash}`
+    var { stdout, stderr } = await exec(cmd);
+    if (stdout.includes('Leaf')) {
+        let res = stdout.match(/(?<=Leaf: ).*$/gm);
+        return res[0]
+    }
+}
+
+
 async function getVerifierResult(txhash) {
-    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} get-tx-execution-output --hash ${txhash}  | jq -r '.[] | select(.kind == "Verification") | .data' | base64 -d`
+    let leaf = await getTxLeaf(txhash);
+    if (!leaf) return leaf;
+    var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} get-tx ${leaf} | jq -r '.payload.Verification.verification' | base64 -d`
 
     var { stdout, stderr } = await exec(cmd);
-    // console.log('stdout:', stdout);
-    // console.log('stderr:', stderr);
     return stdout;
 }
 
@@ -153,7 +170,9 @@ function sleep(ms) {
 async function doBlock(blockNumber) {
     console.log("doBlock ", blockNumber)
     let {witness_checksum, witness_name, witness_url} = await captureWitness(blockNumber)
-    // let {witness_checksum, witness_name, witness_url} = getMockWitness()
+    console.log("witness_checksum ", witness_checksum)
+    console.log("witness_name ", witness_name)
+    console.log("witness_url ", witness_url)
     console.log(`--${witness_checksum}-- len ${witness_checksum.length}`)
     let txhash = await executeProof(witness_checksum, witness_name, witness_url);
     let start = Date.now()
@@ -180,6 +199,7 @@ async function doBlock(blockNumber) {
 }
 
 async function getLatestBlockNumber() {
+    console.log('getLatestBlockNumber')
     let res = await customHttpProvider.getBlockNumber();
     return res;
 }
@@ -187,9 +207,11 @@ async function getLatestBlockNumber() {
 
 
 async function main() {
+    let blockNumber = firstBlock;
     while (true) {
-        let blockNumber = await getLatestBlockNumber()
+        // let blockNumber = await getLatestBlockNumber()
         await doBlock(blockNumber)
+        blockNumber++;
     }
 }
 
