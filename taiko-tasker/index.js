@@ -135,7 +135,7 @@ async function executeProof(witness_checksum, witness_name, witness_url) {
 async function getTxLeaf(txhash) {
     var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} print-tx-tree ${txhash}`
     var { stdout, stderr } = await exec(cmd);
-    console.log('getTxLeaf stdout: ', stdout);
+    // console.log('getTxLeaf stdout: ', stdout);
     if (stdout.indexOf('Leaf') > 0) {
         console.log("have Leaf");
         let res = stdout.match(/(?<=Leaf: ).*$/gm);
@@ -155,13 +155,6 @@ async function getVerifierResult(txhash) {
     var { stdout, stderr } = await exec(cmd);
     console.log('stdout: ', stdout)
     return stdout;
-}
-
-function getMockWitness() {
-    let witness_checksum = '7dacd2a082c5794642d0fba5c68e52e23f3fb423d6e74fe87e27652b5a34f260'
-    let witness_name = 'witness-mock.json'
-    let witness_url = `https://gevulot.eu-central-1.linodeobjects.com/witness-mock.json`
-    return {witness_checksum, witness_name, witness_url};
 }
 
 async function writeVerifierResult(verifier_result, filepath) {
