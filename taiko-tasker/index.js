@@ -148,9 +148,12 @@ async function getTxLeaf(txhash) {
 async function getVerifierResult(txhash) {
     let leaf = await getTxLeaf(txhash);
     if (!leaf) return leaf;
+    console.log('got leaf back: ', leaf)
     var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} get-tx ${leaf} | jq -r '.payload.Verification.verification' | base64 -d`
+    console.log('cmd: ', cmd)
 
     var { stdout, stderr } = await exec(cmd);
+    console.log('stdout: ', stdout)
     return stdout;
 }
 
