@@ -137,7 +137,9 @@ async function getTxLeaf(txhash) {
     var { stdout, stderr } = await exec(cmd);
     console.log('getTxLeaf stdout: ', stdout);
     if (stdout.includes('Leaf')) {
+        console.log("have Leaf");
         let res = stdout.match(/(?<=Leaf: ).*$/gm);
+        console.log("res: ", res);
         return res[0]
     }
 }
