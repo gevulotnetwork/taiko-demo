@@ -135,6 +135,7 @@ async function executeProof(witness_checksum, witness_name, witness_url) {
 async function getTxLeaf(txhash) {
     var cmd = `${process.env.GEVULOT_CLI} --jsonurl ${process.env.GEVULOT_JSONURL} print-tx-tree ${txhash}`
     var { stdout, stderr } = await exec(cmd);
+    console.log('getTxLeaf stdout: ', stdout);
     if (stdout.includes('Leaf')) {
         let res = stdout.match(/(?<=Leaf: ).*$/gm);
         return res[0]
