@@ -55,7 +55,7 @@ Lastly, you will need a public url for for the file.  An S3 bucket would be one 
 Use the json structure below as a template for creating the parameter inputs.  You will observe:
 - three arguments are passed in as key/value pairs
 - two folders used
-  - the `/gevulot` path is used for static files embedded in the prover image.  In this case, there is one, a 512MB proof parameters files, with degree k = 22.
+  - the `/gevulot` path is used for static files embedded in the prover image.  In this case, there is one, a 512MB proof parameters file, with degree k = 22.
   - the `/workspace` path is used for dynamic file instances
 - one input file is passed in, namely our witness.  Edit the url and hash values, the latter associated with the `local_path` property.
 - the output proof from the prover is referenced as an input into the verifier.
