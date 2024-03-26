@@ -11,9 +11,9 @@ We will first need a witness for the proof.  There are three steps here:
 - upload to http server
 
 
-### 1.1  Download a ransom witness
+### 1.1  Download a random witness
 
-There are 58 different Taiko witneeses located here, numbers 46800-46857
+There are 58 Taiko witnesses located here, numbered 46800-46857:
 
 ```
 https://gevulot-test.eu-central-1.linodeobjects.com/witness-46800.json
@@ -26,7 +26,12 @@ If you'd like a genuinely random number, [this link](https://www.random.org/inte
 
 ### 1.2  Rename the file
 
-Now, rename the file to something unique.  The proof request transaction results in a hash of the inputs.  It is best to have a unique unique hash of the transation., otherwise your proof quest may have already results attached to 
+Now, rename the file to something unique. It is important that the entire proof request be a unique string.  This may be done via unique input files, or accomplished with a nonce (not used here).
+
+For this example, I have downloaded `witness-46807.json` and renamed it here:
+```
+~/Downloads/mynewwitness-46807.json
+```
 
 ### 1.3 Calculate the hash
 
