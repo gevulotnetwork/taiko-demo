@@ -19,7 +19,7 @@ There are 58 Taiko witnesses of various sizes located here, numbered 46800-46857
 https://gevulot-test.eu-central-1.linodeobjects.com/witness-46800.json
 ```
 
-Choose one at random, and download.
+Choose one at random and download it.
 
 
 If you'd like a genuinely random number, [this link](https://www.random.org/integers/?num=1&min=46800&max=46857&col=5&base=10&format=html&rnd=new) will generate a number in the given range.  Just plug the number into the url above and download the file.
