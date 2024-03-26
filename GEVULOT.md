@@ -5,15 +5,15 @@ This readme will guide you through the steps necesary to run the Taiko prover on
 
 ## 1 The Witness
 
-We will first need a witness for the proof.  There are three steps here:
-- download a random witness
-- rename it to a unique name
-- upload to http server
+We will first need a witness for the proof.  The steps here:
+1. download a random witness
+2. rename it to a unique name
+3. upload to http server
 
 
 ### 1.1  Download a random witness
 
-There are 58 Taiko witnesses located here, numbered 46800-46857:
+There are 58 Taiko witnesses a various sizes located here, numbered 46800-46857:
 
 ```
 https://gevulot-test.eu-central-1.linodeobjects.com/witness-46800.json
@@ -28,17 +28,19 @@ If you'd like a genuinely random number, [this link](https://www.random.org/inte
 
 Now, rename the file to something unique. It is important that the entire proof request be a unique string.  This may be done via unique input files, or accomplished with a nonce (not used here).
 
-For this example, I have downloaded `witness-46807.json` and renamed it here:
+For this example, we have downloaded `witness-46807.json` and renamed it here:
 ```
 ~/Downloads/mynewwitness-46807.json
 ```
 
 ### 1.3 Calculate the hash
 
-For this step, you will need to have build `gevulot-cli` and have it in your path.  Call it with the `calculate-hash` action, and pass in the witness file.
+For this step, you will need to have built `gevulot-cli` and have it in your path.  Call it with the `calculate-hash` action, and pass in the witness file.
 
+```
 gevulot-cli calculate-hash --file  ~/Downloads/mynewwitness-46807.json
 The hash of the file is: 77263b62caae635536c7fefe99e249c55dec5625fecdb550cf83c26108e3f03a
+```
 
 
 ### 1.4  Upload to a public http server
@@ -51,17 +53,18 @@ Lastly, you will need a public url for for the file.  An S3 bucket would be one 
 
 
 Use the json structure below as a template for creating the parameter inputs.  You will observe:
-- five arguments are passed in as key/value pairs
+- three arguments are passed in as key/value pairs
 - two folders used
   - the `/gevulot` path is used for static files embedded in the prover image.  In this case, there is one, a 512MB proof parameters files, with degree k = 22.
   - the `/workspace` path is used for dynamic file instances
-- one input files is passed in, namely out witness.  Edit urls and hash values, the latter associated with the `local_path` property.
+- one input file is passed in, namely our witness.  Edit the url and hash values, the latter associated with the `local_path` property.
 - the output proof from the prover is referenced as an input into the verifier.
 
-You will have to edit the witness file in three place
+In sum, you will have to edit the witness file in four places:
 - the argument list, for the `-w` parameter
 - the `vm-path` property
 - the `file_url` property
+- the `local_path` property, which holds the file hash string
 
 
 ```
@@ -112,7 +115,7 @@ You will have to edit the witness file in three place
 ]
 ```
 
-Note: the program hashes are static, corresponding to the currently deployed instances of the prover and verifier.
+Note: the program hashes are static, corresponding to the currently deployed instances of the Taiko prover and verifier.
 
 ```
 Taiko Prover hash: b79c111360acfefd01f240c0d4942e25f855a1fd25278026ecc76730f82a75da
@@ -149,14 +152,14 @@ First, you can query the transaction itself, by calling `gevulot-cli` with the `
 ```
 ### 3.2 View the transaction tree
 
-Now, print out the transaction tree using the `print-tx-tree` action and the txhash you got back from the `exec` call.
+Now, print out the transaction tree using the `print-tx-tree` action and the txhash you got back from the `exec` call.  The tree will eventually contain leaves, from which you can read the verifier results.
 
 
 ```
 ./target/release/gevulot-cli --jsonurl http://api.devnet.gevulot.com:9944 print-tx-tree e462679e6d3345d76005ee42301e01065db688e080c10adb2648ad645c77d1a5 
 
 ```
-In the case of this prover, it can typically take 6-7 minutes.  Until then, no tree will be found
+In the case of The Taiko prover, it can take 6-7 minutes for a proof to complete.  Until then, no tree will be found:
 
 ```
 An error while fetching transaction tree: RPC response error:not found: no root tx found for e462679e6d3345d76005ee42301e01065db688e080c10adb2648ad645c77d1a5
@@ -176,7 +179,7 @@ Root: e462679e6d3345d76005ee42301e01065db688e080c10adb2648ad645c77d1a5
 
 ### 3.3 Examine a leaf
 
-You may see several Leaf entries.  Choose the first, and do a `get-tx` on it to print out the verifier results.
+You may see several `Leaf` entries.  Choose the first, and do a `get-tx` on it to print out the verifier results.
 
 
 ```
