@@ -13,7 +13,7 @@ We will first need a witness for the proof.  The steps here:
 
 ### 1.1  Download a random witness
 
-There are 58 Taiko witnesses a various sizes located here, numbered 46800-46857:
+There are 58 Taiko witnesses of various sizes located here, numbered 46800-46857:
 
 ```
 https://gevulot-test.eu-central-1.linodeobjects.com/witness-46800.json
