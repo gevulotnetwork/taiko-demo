@@ -365,7 +365,7 @@ Tx Hash:fbb7df66a50610c89e2fbb70684e89a881d332db599080db6a1650022b5268ad
 
 Copy the prover and verifier hash strings -- they will be used in the next step.
 
-### 6.3 Task execution
+### 6.4 Task execution
 
 This example shows how to execute the prover.
 
